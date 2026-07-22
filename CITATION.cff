@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use BoundaryBench in a study or evaluation, please cite this software release."
+title: "BoundaryBench: deterministic control-plane evidence for tool-using agents"
+type: software
+authors:
+  - family-names: "Fortune"
+repository-code: "https://github.com/fortunexbt/boundary-bench"
+url: "https://fortunexbt.github.io/boundary-bench/"
+version: "0.1.0"
+date-released: "2026-07-22"
+license: Apache-2.0
+keywords:
+  - agent evaluation
+  - control plane
+  - prompt injection
+  - MCP
+  - A2A
+  - deterministic replay
+  - receipts

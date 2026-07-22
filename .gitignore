@@ -1,0 +1,13 @@
+dist/
+dist-site/
+node_modules/
+coverage/
+.DS_Store
+*.log
+*.pem
+.env
+.env.*
+!.env.example
+.playwright-cli/
+output/playwright/desktop-full.png
+output/playwright/mobile-full.png
