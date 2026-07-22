@@ -1,0 +1,6 @@
+.playwright-cli/
+coverage/
+dist/
+dist-site/
+node_modules/
+output/

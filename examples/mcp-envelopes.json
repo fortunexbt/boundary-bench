@@ -1,0 +1,23 @@
+[
+  {
+    "id": "user-search",
+    "tick": 0,
+    "method": "boundary/instruction",
+    "tags": ["fixture"]
+  },
+  {
+    "id": "call-search",
+    "tick": 1,
+    "method": "tools/call",
+    "tool": "search_knowledge",
+    "audience": "knowledge-api",
+    "costMicros": 40
+  },
+  {
+    "id": "result-search",
+    "tick": 2,
+    "method": "boundary/tool-result",
+    "tool": "search_knowledge",
+    "tags": ["untrusted_content", "prompt_injection"]
+  }
+]
