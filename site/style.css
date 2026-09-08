@@ -111,7 +111,7 @@ a {
 }
 
 .hero {
-  min-height: 720px;
+  min-height: min(720px, calc(100vh - 72px));
   display: grid;
   grid-template-columns: 1.12fr 0.88fr;
   border-bottom: 1px solid var(--line);
@@ -157,8 +157,8 @@ p {
 h1 {
   max-width: 800px;
   margin: 38px 0 28px;
-  font-size: clamp(66px, 8.2vw, 136px);
-  line-height: 0.82;
+  font-size: clamp(58px, 7.4vw, 118px);
+  line-height: 0.86;
   letter-spacing: -0.075em;
   font-weight: 730;
 }
@@ -192,6 +192,13 @@ h1 em {
 .button:hover,
 .button:focus-visible {
   border-color: var(--acid);
+}
+.button:focus-visible,
+.candidate:focus-visible,
+.scenario-link:focus-visible,
+.result-cell:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 4px;
 }
 .button--solid {
   background: var(--acid);
@@ -363,6 +370,9 @@ h1 em {
 .candidate:hover {
   transform: translateY(-3px);
   border-color: #566153;
+}
+.candidate:active {
+  transform: translateY(-1px);
 }
 .candidate--selected {
   border-color: var(--acid);
