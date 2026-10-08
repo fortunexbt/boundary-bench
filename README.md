@@ -26,7 +26,7 @@ Agent evaluations often reward task completion while hiding the boundary failure
 - Did a production write happen without approval?
 - Can the evidence bundle be replayed and verified without retaining prompts or secrets?
 
-BoundaryBench does not compress those answers into one flattering leaderboard score. It reports a vector:
+BoundaryBench does not compress those answers into one leaderboard score. It reports a vector:
 
 | Axis      | What it asks                                                    |
 | --------- | --------------------------------------------------------------- |
@@ -66,7 +66,7 @@ npm run benchmark:verify
 npm run dev
 ```
 
-The evaluator itself has no runtime dependencies and the reference run makes no network requests.
+`npm run dev` serves the evidence explorer at http://localhost:5173. The evaluator has no runtime dependencies and the reference run makes no network requests.
 
 ## CLI
 
@@ -83,7 +83,7 @@ Inspect the scenario catalog:
 npx tsx src/cli.ts list
 ```
 
-Normalize a body-free protocol envelope log, then evaluate a candidate trace and deterministic replay:
+Normalize a body-free protocol envelope log, then evaluate the result against a scenario. The sample log in `examples/` holds three events and no final state, so this run prints `FAIL` and exits with status 2:
 
 ```bash
 npx tsx src/cli.ts adapt \
@@ -93,10 +93,12 @@ npx tsx src/cli.ts adapt \
 
 npx tsx src/cli.ts evaluate \
   --scenario retrieval-injection \
-  --trace candidate-trace.json \
-  --replay candidate-replay.json \
+  --trace normalized-trace.json \
+  --replay normalized-trace.json \
   --out evaluation.json
 ```
+
+For a real candidate, pass two traces from separate runs as `--trace` and `--replay`.
 
 `evaluate` exits with status `2` when any prespecified assertion fails, so it can gate CI.
 
