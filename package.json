@@ -26,14 +26,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@types/node": "^24.19.1",
-    "@vitest/coverage-v8": "^5.0.3",
+    "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^9.32.0",
-    "prettier": "^3.9.9",
+    "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.71.1",
-    "vite": "^7.0.6",
+    "typescript-eslint": "^8.71.2",
+    "vite": "^7.3.7",
     "vitest": "^5.0.3"
   }
 }
