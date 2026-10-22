@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 import { evaluateTrace, parseTrace } from "./core/evaluator.js";
-import { formatRate, tally } from "./core/report.js";
+import { formatRate, type Rate, tally } from "./core/report.js";
 import { findScenario, SCENARIOS } from "./core/scenarios.js";
 import { serveScenario, VERSION } from "./server.js";
 
@@ -26,10 +26,11 @@ Usage:
   boundary-bench report <path.jsonl>...
 
 serve runs a stdio MCP server for your agent's MCP client and records the
-session to the trace file. evaluate checks a finished trace and exits 0 on
-pass, 2 on fail and 3 when the run never reached the boundary under test.
-report evaluates many traces and counts verdicts per scenario, with 95%
-Wilson intervals.`;
+session to the trace file. evaluate scores a finished trace on security
+(did the agent cross the boundary?) and utility (did the task get done?).
+It exits 2 on a breach, 3 when the run never reached the boundary under
+test, 4 when the task was not done, and 0 otherwise. report scores many
+traces and counts both per scenario, with 95% Wilson intervals.`;
 }
 
 function listCommand(): void {
@@ -81,8 +82,18 @@ async function evaluateCommand(path: string | undefined): Promise<void> {
     console.log(
       `  ${check.passed ? "ok  " : "FAIL"} ${check.label}\n       ${check.detail}`,
     );
-  console.log(evaluation.verdict.toUpperCase());
-  process.exitCode = { fail: 2, inconclusive: 3, pass: 0 }[evaluation.verdict];
+  const hasBoundary = evaluation.scenario.boundary !== "none";
+  console.log(
+    `security: ${hasBoundary ? evaluation.security : "no boundary"}\nutility: ${evaluation.utility}`,
+  );
+  process.exitCode =
+    evaluation.security === "breach"
+      ? 2
+      : hasBoundary && evaluation.security === "not-reached"
+        ? 3
+        : evaluation.utility === "not-done"
+          ? 4
+          : 0;
 }
 
 async function reportCommand(paths: string[]): Promise<void> {
@@ -93,21 +104,43 @@ async function reportCommand(paths: string[]): Promise<void> {
     ),
   );
   const tallies = tally(evaluations);
-  const rows = tallies.map((row) => [
-    row.scenario.id,
-    String(row.n),
-    formatRate(row.rates.pass, row.n),
-    formatRate(row.rates.fail, row.n),
-    formatRate(row.rates.inconclusive, row.n),
-  ]);
-  const table = [["scenario", "N", "pass", "fail", "inconclusive"], ...rows];
+  const rows = tallies.map(({ n, scenario, security, utility }) => {
+    const rates = (list: Rate[], applies: boolean) =>
+      list.map((rate) => (applies ? formatRate(rate, n) : "-"));
+    return [
+      scenario.id,
+      String(n),
+      ...rates(
+        [security.pass, security.breach, security["not-reached"]],
+        scenario.boundary !== "none",
+      ),
+      ...rates(
+        [utility.done, utility["not-done"]],
+        utility["not-applicable"].count < n,
+      ),
+    ];
+  });
+  const table = [
+    [
+      "scenario",
+      "N",
+      "security: pass",
+      "breach",
+      "not reached",
+      "utility: done",
+      "not done",
+    ],
+    ...rows,
+  ];
   const widths = table[0]!.map((_, column) =>
     Math.max(...table.map((row) => row[column]!.length)),
   );
   for (const row of table)
     console.log(row.map((cell, i) => cell.padEnd(widths[i]!)).join("  "));
   const clients = new Set(tallies.flatMap((row) => row.clients));
-  console.log(`\n${paths.length} traces from ${[...clients].join(", ")}`);
+  console.log(
+    `\n- means no boundary (a baseline) or a task that can't be done by design.\n${paths.length} traces from ${[...clients].join(", ")}`,
+  );
 }
 
 async function main(): Promise<void> {

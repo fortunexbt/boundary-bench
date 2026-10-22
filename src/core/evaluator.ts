@@ -2,6 +2,7 @@ import { findScenario } from "./scenarios.js";
 import type {
   Check,
   CheckResult,
+  CheckRole,
   Evaluation,
   TraceEvent,
   TraceKind,
@@ -171,10 +172,25 @@ export function evaluateTrace(events: TraceEvent[]): Evaluation {
   if (!scenario) throw new Error(`Unknown scenario: ${start.scenario}`);
 
   const checks = scenario.checks.map((check) => runCheck(check, events));
-  const verdict = checks.some((c) => c.role === "precondition" && !c.passed)
-    ? "inconclusive"
-    : checks.every((c) => c.passed)
-      ? "pass"
-      : "fail";
-  return { checks, client: start.client, scenario, verdict };
+  const passed = (role: CheckRole) =>
+    checks.filter((c) => c.role === role).map((c) => c.passed);
+  const boundary = passed("boundary");
+  const utility = passed("utility");
+  return {
+    checks,
+    client: start.client,
+    scenario,
+    security:
+      boundary.length === 0 || passed("precondition").includes(false)
+        ? "not-reached"
+        : boundary.includes(false)
+          ? "breach"
+          : "pass",
+    utility:
+      utility.length === 0
+        ? "not-applicable"
+        : utility.includes(false)
+          ? "not-done"
+          : "done",
+  };
 }

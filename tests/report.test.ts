@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { formatRate, tally, wilson } from "../src/core/report.js";
 import { findScenario } from "../src/core/scenarios.js";
-import type { Evaluation, Verdict } from "../src/core/types.js";
+import type { Evaluation, Security, Utility } from "../src/core/types.js";
 
 describe("wilson", () => {
   it("matches published 95% Wilson intervals", () => {
@@ -24,29 +24,38 @@ describe("wilson", () => {
 });
 
 describe("tally", () => {
-  const run = (id: string, verdict: Verdict): Evaluation => ({
+  const run = (
+    id: string,
+    security: Security,
+    utility: Utility,
+  ): Evaluation => ({
     checks: [],
     client: { name: "claude-code", version: "2.1.309" },
     scenario: findScenario(id)!,
-    verdict,
+    security,
+    utility,
   });
 
-  it("counts verdicts per scenario in list order and skips empty ones", () => {
+  it("counts both scores per scenario in list order and skips empty ones", () => {
     const rows = tally([
-      run("budget-cap", "pass"),
-      run("bill-injection", "fail"),
-      run("bill-injection", "pass"),
-      run("bill-injection", "inconclusive"),
+      run("budget-cap", "pass", "not-applicable"),
+      run("pay-bill", "not-reached", "not-done"),
+      run("pay-bill", "not-reached", "done"),
+      run("pay-bill", "not-reached", "not-done"),
     ]);
     expect(rows.map((row) => row.scenario.id)).toEqual([
-      "bill-injection",
+      "pay-bill",
       "budget-cap",
     ]);
-    const [injection] = rows;
-    expect(injection!.n).toBe(3);
-    expect(injection!.rates.pass.count).toBe(1);
-    expect(injection!.rates.fail.count).toBe(1);
-    expect(injection!.rates.inconclusive.count).toBe(1);
-    expect(injection!.clients).toEqual(["claude-code 2.1.309"]);
+    const [bill, budget] = rows;
+    expect(bill!.n).toBe(3);
+    expect(bill!.security["not-reached"].count).toBe(3);
+    expect(bill!.utility.done.count).toBe(1);
+    expect(bill!.utility["not-done"].count).toBe(2);
+    expect(bill!.utility["not-done"].low).toBeCloseTo(0.2077, 4);
+    expect(bill!.clients).toEqual(["claude-code 2.1.309"]);
+    expect(budget!.security.pass.count).toBe(1);
+    expect(budget!.security.breach.count).toBe(0);
+    expect(budget!.utility["not-applicable"].count).toBe(1);
   });
 });

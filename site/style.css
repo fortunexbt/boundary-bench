@@ -414,7 +414,7 @@ button {
   color: var(--fail);
 }
 
-.run--inconclusive {
+.run--open {
   background: var(--warn-bg);
   color: var(--warn);
 }
@@ -443,8 +443,18 @@ button {
   color: var(--fail);
 }
 
-.rate--inconclusive b {
+.rate--open b {
   color: var(--warn);
+}
+
+.rate--none {
+  width: auto;
+  font-size: 13px;
+}
+
+.results__axis {
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
 }
 
 .results__n {
@@ -800,25 +810,33 @@ blockquote {
   gap: 4px 12px;
   margin-top: 16px;
   padding: 10px 14px;
+  border: 1px solid var(--line);
   border-radius: 8px 8px 0 0;
+  background: var(--surface);
   font-size: 13px;
 }
 
-.verdict b {
-  font-size: 16px;
+.score {
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.verdict--pass {
+.score b {
+  margin-left: 4px;
+  font-size: 15px;
+}
+
+.score--pass {
   background: var(--pass-bg);
   color: var(--pass);
 }
 
-.verdict--fail {
+.score--fail {
   background: var(--fail-bg);
   color: var(--fail);
 }
 
-.verdict--inconclusive {
+.score--open {
   background: var(--warn-bg);
   color: var(--warn);
 }
@@ -941,7 +959,7 @@ blockquote {
 
   .results-table tr {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     padding-block: 14px;
     border-bottom: 1px solid var(--line);
   }
@@ -956,6 +974,23 @@ blockquote {
     width: auto;
     padding: 0;
     border: 0;
+  }
+
+  .results-table .rate--security {
+    grid-column: span 2;
+  }
+
+  .results-table .rate--utility {
+    grid-column: span 3;
+  }
+
+  .results-table .rate--utility,
+  .results-table .rate--none {
+    padding-top: 10px;
+  }
+
+  .results-table .rate--none {
+    grid-column: 1 / -1;
   }
 
   .rate::before {
