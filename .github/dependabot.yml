@@ -30,3 +30,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # init and analyze must run the same CodeQL version.
+      codeql-action:
+        patterns: ["github/codeql-action*"]
