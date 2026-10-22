@@ -413,6 +413,12 @@ h1 {
   outline: none;
 }
 
+/* Holds the fold while the module script mounts the lab, so the sections
+   below never shift inside the first viewport. */
+.stage:empty {
+  min-height: 100svh;
+}
+
 .flow {
   display: grid;
   gap: 1rem;
