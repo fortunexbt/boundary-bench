@@ -79,7 +79,30 @@ interface Bundle {
   scorecards: Scorecard[];
 }
 
-const AXES: Axis[] = ["safety", "utility", "control", "integrity"];
+const AXES: Array<{ axis: Axis; label: string; question: string }> = [
+  {
+    axis: "safety",
+    label: "Safety",
+    question: "Were forbidden capabilities or untrusted instructions acted on?",
+  },
+  {
+    axis: "utility",
+    label: "Utility",
+    question: "Did the benign and safely recoverable tasks still complete?",
+  },
+  {
+    axis: "control",
+    label: "Control",
+    question: "Did stops, budgets, scopes and approval gates hold?",
+  },
+  {
+    axis: "integrity",
+    label: "Integrity",
+    question: "Are receipts body-free, hash-linked and replay-stable?",
+  },
+];
+
+const REPO_URL = "https://github.com/fortunexbt/boundary-bench";
 
 function escapeHtml(value: unknown): string {
   return String(value)
@@ -118,73 +141,164 @@ async function verifyBundleHash(bundle: Bundle): Promise<boolean> {
   return computed === bundleHash;
 }
 
-function radar(scorecard: Scorecard): string {
-  const center = 82;
-  const radius = 64;
-  const points = AXES.map((axis, index) => {
-    const score = scorecard.axes.find((item) => item.axis === axis)?.rate ?? 0;
-    const angle = -Math.PI / 2 + index * (Math.PI / 2);
-    return `${center + Math.cos(angle) * radius * score},${center + Math.sin(angle) * radius * score}`;
-  }).join(" ");
-  return `<svg class="radar" viewBox="0 0 164 164" role="img" aria-label="Four-axis score shape">
-    <polygon class="radar-grid radar-grid--outer" points="82,18 146,82 82,146 18,82" />
-    <polygon class="radar-grid" points="82,50 114,82 82,114 50,82" />
-    <line x1="82" y1="18" x2="82" y2="146" /><line x1="18" y1="82" x2="146" y2="82" />
-    <polygon class="radar-score" points="${points}" />
-    <circle cx="82" cy="82" r="3" />
-  </svg>`;
+function findRun(
+  bundle: Bundle,
+  candidateId: string,
+  scenarioId: string,
+): Run | undefined {
+  return bundle.runs.find(
+    (run) => run.candidateId === candidateId && run.scenarioId === scenarioId,
+  );
 }
 
-function candidatePanel(
+function failedCount(run: Run): number {
+  return run.assertions.filter((assertion) => !assertion.passed).length;
+}
+
+function intro(bundle: Bundle, hashVerified: boolean): string {
+  return `<header class="intro">
+      <div class="intro__title">
+        <h1>BoundaryBench</h1>
+        <nav aria-label="Page"><a href="#results">Results</a><a href="#trace">Trace</a><a href="#method">Method</a><a href="${REPO_URL}">Source</a></nav>
+      </div>
+      <p class="intro__lede">A deterministic crash-test benchmark for AI agent control planes. Its ${bundle.scenarios.length} scenarios run in benign and adversarial pairs and check that stops, budgets, audience scopes, approvals and receipt integrity block forbidden actions while permitted work continues.</p>
+      <dl class="facts">
+        <div><dt>Version</dt><dd>${escapeHtml(bundle.benchmarkVersion)}</dd></div>
+        <div><dt>Scenarios</dt><dd>${bundle.scenarios.length}</dd></div>
+        <div><dt>Traces</dt><dd>${bundle.runs.length}</dd></div>
+        <div><dt>Bundle SHA-256</dt><dd><code title="${escapeHtml(bundle.bundleHash)}">${escapeHtml(shortHash(bundle.bundleHash, 16))}</code> <span class="${hashVerified ? "status status--pass" : "status status--fail"}">${hashVerified ? "verified in this browser" : "hash mismatch"}</span></dd></div>
+      </dl>
+    </header>`;
+}
+
+function axisCell(score: AxisScore | undefined): string {
+  if (!score) return "<td>n/a</td>";
+  return `<td class="num axis-cell">
+      <span class="axis-cell__value">${percentage(score.rate)}</span>
+      <span class="axis-cell__count">${score.passed}/${score.total}</span>
+      <span class="meter" style="--rate:${score.rate}" aria-hidden="true"></span>
+    </td>`;
+}
+
+function scoreTable(bundle: Bundle): string {
+  return `<div class="table-scroll"><table class="scores">
+      <thead><tr>
+        <th scope="col">Candidate</th>
+        <th scope="col" class="num">Scenarios</th>
+        <th scope="col" class="num">Pairs</th>
+        ${AXES.map((axis) => `<th scope="col" class="num" title="${escapeHtml(axis.question)}">${axis.label}</th>`).join("")}
+      </tr></thead>
+      <tbody>${bundle.candidates
+        .map((candidate) => {
+          const card = bundle.scorecards.find(
+            (item) => item.candidateId === candidate.id,
+          );
+          if (!card) return "";
+          return `<tr>
+            <th scope="row" title="${escapeHtml(candidate.description)}">${escapeHtml(candidate.name)}</th>
+            <td class="num"><span class="axis-cell__value">${card.scenariosPassed}/${card.scenariosTotal}</span></td>
+            <td class="num"><span class="axis-cell__value">${card.pairedControlsPassed}/${card.pairedControlsTotal}</span></td>
+            ${AXES.map(({ axis }) => axisCell(card.axes.find((item) => item.axis === axis))).join("")}
+          </tr>`;
+        })
+        .join("")}</tbody>
+    </table></div>`;
+}
+
+function resultCell(
+  run: Run,
+  scenario: Scenario,
   candidate: Candidate,
-  scorecard: Scorecard,
-  selected: boolean,
 ): string {
-  return `<button class="candidate ${selected ? "candidate--selected" : ""}" data-candidate="${escapeHtml(candidate.id)}" aria-pressed="${selected}">
-    <span class="candidate__topline"><span>${escapeHtml(candidate.kind)}</span><span>${scorecard.scenariosPassed}/${scorecard.scenariosTotal}</span></span>
-    <span class="candidate__name">${escapeHtml(candidate.name)}</span>
-    <span class="candidate__body">
-      ${radar(scorecard)}
-      <span class="axis-list">
-        ${scorecard.axes
-          .map(
-            (axis) =>
-              `<span class="axis-row"><span>${escapeHtml(axis.axis)}</span><span class="axis-track"><i style="width:${Math.round(axis.rate * 100)}%"></i></span><b>${percentage(axis.rate)}</b></span>`,
-          )
-          .join("")}
-      </span>
-    </span>
-    <span class="candidate__pair">paired controls <b>${scorecard.pairedControlsPassed}/${scorecard.pairedControlsTotal}</b></span>
-    <span class="candidate__description">${escapeHtml(candidate.description)}</span>
-  </button>`;
-}
-
-function resultCell(run: Run): string {
-  const failed = run.assertions.filter((assertion) => !assertion.passed).length;
-  return `<button class="result-cell ${run.passed ? "result-cell--pass" : "result-cell--fail"}" data-run="${escapeHtml(run.candidateId)}::${escapeHtml(run.scenarioId)}" aria-label="${run.passed ? "Pass" : `${failed} failed assertions`}">
-    <span>${run.passed ? "PASS" : "FAIL"}</span><small>${run.passed ? shortHash(run.traceRoot, 7) : `${failed} breach${failed === 1 ? "" : "es"}`}</small>
-  </button>`;
+  const failed = failedCount(run);
+  const label = `${candidate.name}, ${scenario.title}, ${run.passed ? "pass" : `fail, ${failed} of ${run.assertions.length} assertions failed`}`;
+  return `<button class="cell ${run.passed ? "cell--pass" : "cell--fail"}" data-run="${escapeHtml(run.candidateId)}::${escapeHtml(run.scenarioId)}" aria-pressed="false" aria-label="${escapeHtml(label)}">
+      <span class="cell__verdict">${run.passed ? "Pass" : "Fail"}</span>
+      <span class="cell__detail">${run.passed ? `<code title="Trace root">${shortHash(run.traceRoot, 7)}</code>` : `${failed} failed`}</span>
+    </button>`;
 }
 
 function scenarioMatrix(bundle: Bundle): string {
-  return `<div class="matrix-wrap"><table class="matrix">
-    <thead><tr><th>scenario / counterfactual</th>${bundle.candidates.map((candidate) => `<th>${escapeHtml(candidate.name)}</th>`).join("")}</tr></thead>
-    <tbody>${bundle.scenarios
-      .map((scenario, index) => {
-        const runs = bundle.candidates.map((candidate) =>
-          bundle.runs.find(
-            (run) =>
-              run.candidateId === candidate.id &&
-              run.scenarioId === scenario.id,
-          ),
-        );
-        return `<tr>
-          <td><button class="scenario-link" data-scenario="${escapeHtml(scenario.id)}"><span class="scenario-index">${String(index + 1).padStart(2, "0")}</span><span><b>${escapeHtml(scenario.title)}</b><small>${escapeHtml(scenario.protocol)} · ${escapeHtml(scenario.variant)} · ${escapeHtml(scenario.pairId)}</small></span></button></td>
-          ${runs.map((run) => (run ? `<td>${resultCell(run)}</td>` : "<td>—</td>")).join("")}
-        </tr>`;
-      })
-      .join("")}</tbody>
-  </table></div>`;
+  const pairs = new Map<string, Scenario[]>();
+  for (const scenario of bundle.scenarios) {
+    pairs.set(scenario.pairId, [
+      ...(pairs.get(scenario.pairId) ?? []),
+      scenario,
+    ]);
+  }
+  const rows = [...pairs.values()]
+    .map(
+      (scenarios) =>
+        `<tbody>${scenarios
+          .map(
+            (scenario) => `<tr data-row="${escapeHtml(scenario.id)}">
+            <th scope="row"><button class="scenario" data-scenario="${escapeHtml(scenario.id)}"><span class="scenario__title">${escapeHtml(scenario.title)}</span><span class="scenario__variant">${escapeHtml(scenario.variant)}</span></button></th>
+            <td class="variant">${escapeHtml(scenario.variant)}</td>
+            ${bundle.candidates
+              .map((candidate) => {
+                const run = findRun(bundle, candidate.id, scenario.id);
+                return `<td class="result">${run ? resultCell(run, scenario, candidate) : "n/a"}</td>`;
+              })
+              .join("")}
+          </tr>`,
+          )
+          .join("")}</tbody>`,
+    )
+    .join("");
+  return `<div class="table-scroll"><table class="matrix">
+      <thead><tr><th scope="col">Scenario</th><th scope="col" class="variant">Variant</th>${bundle.candidates.map((candidate) => `<th scope="col" class="result">${escapeHtml(candidate.name)}</th>`).join("")}</tr></thead>
+      ${rows}
+    </table></div>`;
+}
+
+function eventRow(event: TraceEvent, failures: AssertionResult[]): string {
+  const failing = failures.filter((assertion) =>
+    assertion.evidence.includes(event.id),
+  );
+  const target = event.tool ?? event.id;
+  const details: Array<[string, string]> = [
+    ["Event", `<code>${escapeHtml(event.id)}</code>`],
+    ["Trust", escapeHtml(event.trust)],
+    ...(event.audience
+      ? ([["Audience", `<code>${escapeHtml(event.audience)}</code>`]] as Array<
+          [string, string]
+        >)
+      : []),
+    ...(failing.length > 0
+      ? ([
+          [
+            "Fails",
+            failing
+              .map((assertion) => `<code>${escapeHtml(assertion.id)}</code>`)
+              .join(" "),
+          ],
+        ] as Array<[string, string]>)
+      : []),
+    ["Payload", `<code>${escapeHtml(event.payloadDigest)}</code>`],
+    [
+      "Previous",
+      event.previousHash
+        ? `<code>${escapeHtml(event.previousHash)}</code>`
+        : "none, chain start",
+    ],
+    ["Receipt", `<code>${escapeHtml(event.hash)}</code>`],
+  ];
+  return `<li class="event${failing.length > 0 ? " event--evidence" : ""}" id="event-${escapeHtml(event.id)}">
+      <details>
+        <summary>
+          <span class="event__seq">${event.sequence}</span>
+          <span class="event__actor">${escapeHtml(event.actor)}</span>
+          <span class="event__kind">${escapeHtml(event.kind)}</span>
+          <span class="event__target"><code>${escapeHtml(target)}</code>${event.trust === "untrusted" ? '<span class="tag">untrusted</span>' : ""}${event.tags
+            .filter((tag) => tag !== "untrusted_content")
+            .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
+            .join("")}</span>
+          <span class="event__cost">${event.costMicros ?? ""}</span>
+          <code class="event__hash">${shortHash(event.hash, 8)}</code>
+        </summary>
+        <dl class="event__details">${details.map(([term, value]) => `<div><dt>${term}</dt><dd>${value}</dd></div>`).join("")}</dl>
+      </details>
+    </li>`;
 }
 
 function tracePanel(
@@ -193,164 +307,204 @@ function tracePanel(
   scenarioId: string,
 ): string {
   const scenario = bundle.scenarios.find((item) => item.id === scenarioId);
-  const run = bundle.runs.find(
-    (item) =>
-      item.candidateId === candidateId && item.scenarioId === scenarioId,
-  );
+  const run = findRun(bundle, candidateId, scenarioId);
   if (!scenario || !run) return "";
   const failures = run.assertions.filter((assertion) => !assertion.passed);
+  const counterpart = bundle.scenarios.find(
+    (item) => item.pairId === scenario.pairId && item.id !== scenario.id,
+  );
+  const passedCount = run.assertions.length - failures.length;
+  const sequenceOf = new Map(
+    run.trace.map((event) => [event.id, event.sequence]),
+  );
 
   return `<div class="trace-head">
-      <div><span class="eyebrow">TRACE INSPECTOR / ${escapeHtml(candidateId)}</span><h3>${escapeHtml(scenario.title)}</h3><p>${escapeHtml(scenario.description)}</p></div>
-      <div class="trace-verdict ${run.passed ? "trace-verdict--pass" : "trace-verdict--fail"}"><span>${run.passed ? "BOUNDARY HELD" : "BOUNDARY BREACHED"}</span><code>${shortHash(run.traceRoot)}</code></div>
+      <div class="trace-head__title">
+        <h3 tabindex="-1">${escapeHtml(scenario.title)}</h3>
+        <span class="${run.passed ? "status status--pass" : "status status--fail"}">${run.passed ? "Pass" : "Fail"}</span>
+      </div>
+      <p>${escapeHtml(scenario.description)}</p>
+      <dl class="facts facts--compact">
+        <div><dt>Variant</dt><dd>${escapeHtml(scenario.variant)}</dd></div>
+        <div><dt>Protocol</dt><dd><code>${escapeHtml(scenario.protocol)}</code></dd></div>
+        <div><dt>Trace root</dt><dd><code title="${escapeHtml(run.traceRoot)}">${shortHash(run.traceRoot)}</code></dd></div>
+        ${counterpart ? `<div><dt>Paired with</dt><dd><button class="link-button" data-scenario="${escapeHtml(counterpart.id)}">${escapeHtml(counterpart.title)}</button></dd></div>` : ""}
+      </dl>
     </div>
-    <div class="assertions">
-      ${run.assertions
-        .map(
-          (assertion) =>
-            `<div class="assertion ${assertion.passed ? "assertion--pass" : "assertion--fail"}"><span>${assertion.passed ? "✓" : "×"}</span><div><b>${escapeHtml(assertion.id)}</b><small>${escapeHtml(assertion.explanation)}</small></div><em>${escapeHtml(assertion.axis)}</em></div>`,
-        )
-        .join("")}
-    </div>
-    <div class="trace-rail" aria-label="Hash-linked event trace">
-      ${run.trace
-        .map(
-          (
-            event,
-            index,
-          ) => `<article class="event event--${escapeHtml(event.actor)}">
-            <div class="event__node">${String(index).padStart(2, "0")}</div>
-            <div class="event__card">
-              <header><span>${escapeHtml(event.actor)} / ${escapeHtml(event.kind)}</span><code>t+${event.tick}</code></header>
-              <h4>${escapeHtml(event.tool ?? event.id)}</h4>
-              <div class="event__meta"><span>trust ${escapeHtml(event.trust)}</span>${event.audience ? `<span>aud ${escapeHtml(event.audience)}</span>` : ""}${event.costMicros !== undefined ? `<span>${event.costMicros} µcr</span>` : ""}</div>
-              ${event.tags.length > 0 ? `<div class="event__tags">${event.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}</div>` : ""}
-              <footer><span>payload</span><code>${shortHash(event.payloadDigest, 16)}</code><span>receipt</span><code>${shortHash(event.hash, 16)}</code></footer>
-            </div>
-          </article>`,
-        )
-        .join("")}
-    </div>
-    ${failures.length > 0 ? `<p class="witness"><b>MINIMAL WITNESS</b> ${failures.map((item) => escapeHtml(item.evidence.join(", ") || item.id)).join(" · ")}</p>` : ""}`;
+    <h4 class="trace-subhead">Assertions <span>${passedCount} of ${run.assertions.length} passed</span></h4>
+    <ul class="assertions">${run.assertions
+      .map(
+        (
+          assertion,
+        ) => `<li class="assertion ${assertion.passed ? "assertion--pass" : "assertion--fail"}">
+          <span class="assertion__mark" aria-label="${assertion.passed ? "Passed" : "Failed"}">${assertion.passed ? "✓" : "✕"}</span>
+          <code class="assertion__id">${escapeHtml(assertion.id)}</code>
+          <span class="assertion__text" title="${escapeHtml(assertion.explanation)}">${escapeHtml(assertion.explanation)}${
+            !assertion.passed && assertion.evidence.length > 0
+              ? ` <span class="assertion__evidence">${assertion.evidence.map((id) => `<button class="link-button" data-event="${escapeHtml(id)}" aria-label="Show event ${escapeHtml(id)}">#${sequenceOf.get(id) ?? escapeHtml(id)}</button>`).join(" ")}</span>`
+              : ""
+          }</span>
+          <span class="assertion__axis">${escapeHtml(assertion.axis)}</span>
+        </li>`,
+      )
+      .join("")}</ul>
+    <h4 class="trace-subhead">Events <span>${run.trace.length} receipts, hash-linked</span></h4>
+    <div class="events-head" aria-hidden="true"><span>#</span><span>Actor</span><span>Kind</span><span>Tool or event</span><span>Cost</span><span>Receipt</span></div>
+    <ol class="events">${run.trace.map((event) => eventRow(event, failures)).join("")}</ol>
+    <p class="trace-note">Costs are in µ-credits. Select an event for its payload digest and chain hashes.</p>`;
+}
+
+function method(bundle: Bundle): string {
+  const protocols = bundle.protocolProfiles
+    .map(
+      (profile) =>
+        `${escapeHtml(profile.label)} ${escapeHtml(profile.version)} (${escapeHtml(profile.status)})`,
+    )
+    .join(" and ");
+  return `<section class="method" id="method" aria-labelledby="method-title">
+      <h2 id="method-title">Method</h2>
+      <div class="method__body">
+        <dl class="definitions">
+          <div><dt>Paired worlds</dt><dd>Each scenario has a benign half and an adversarial half. A pair counts only when both pass, so blanket refusal shows up as a utility failure.</dd></div>
+          <div><dt>Assertions</dt><dd>Assertions check what happened in the world, meaning tool calls, audiences, costs, stop order and terminal events. They don't read the agent's account of its intent.</dd></div>
+          <div><dt>Receipts</dt><dd>Events keep content digests, causal order, trust, scope, cost and tags. The recorder rejects raw prompts, tokens and responses.</dd></div>
+          <div><dt>Replay</dt><dd>Canonical JSON and a SHA-256 receipt chain make replay divergence and post-run edits detectable. This page recomputes the bundle hash in your browser on load.</dd></div>
+        </dl>
+        <h3>Score axes</h3>
+        <dl class="definitions">${AXES.map((axis) => `<div><dt>${axis.label}</dt><dd>${escapeHtml(axis.question)}</dd></div>`).join("")}</dl>
+        <h3>Protocol profiles</h3>
+        <p>Adapters normalise recorder envelopes from ${protocols} into one body-free event model. Scenarios tagged <code>native</code> record those events directly.</p>
+        <h3>Known limits</h3>
+        <p>Passing this synthetic fixture pack is neither a security proof nor a protocol certification. The predicates cover declared boundaries only. Production timing, authentication, networking and stochastic model behaviour need separate trials.</p>
+        <p>Run it yourself with <code>npm ci</code> and <code>npm run benchmark</code>. The <a href="${REPO_URL}#quickstart">quickstart</a> covers the CLI and bundle verification.</p>
+      </div>
+    </section>`;
 }
 
 function render(bundle: Bundle, hashVerified: boolean): void {
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) return;
-  let selectedCandidate = "guarded-reference";
+  let selectedCandidate = "naive-reference";
   let selectedScenario = "retrieval-injection";
 
-  const drawTrace = (): void => {
-    const container = document.querySelector<HTMLDivElement>("#trace-panel");
-    if (container)
-      container.innerHTML = tracePanel(
-        bundle,
-        selectedCandidate,
-        selectedScenario,
+  app.innerHTML = `<div class="page">
+      <main>
+        <div class="workspace">
+          <div class="primary">
+            ${intro(bundle, hashVerified)}
+            <section class="results" id="results" aria-labelledby="results-title">
+              <div class="section-title"><h2 id="results-title">Scores</h2><p>Both candidates are illustrative fixtures that exercise the evaluator. A pair passes only when its benign and adversarial halves both pass.</p></div>
+              ${scoreTable(bundle)}
+              <div class="section-title section-title--matrix"><h2>Scenario matrix</h2><p>Select a result to open its trace.</p></div>
+              ${scenarioMatrix(bundle)}
+            </section>
+          </div>
+        <section class="inspector" id="trace" aria-labelledby="trace-title">
+          <div class="inspector__bar">
+            <h2 id="trace-title">Trace</h2>
+            <div class="segmented" role="group" aria-label="Candidate">${bundle.candidates
+              .map(
+                (candidate) =>
+                  `<button data-candidate="${escapeHtml(candidate.id)}" aria-pressed="false">${escapeHtml(candidate.name)}</button>`,
+              )
+              .join("")}</div>
+          </div>
+          <div id="trace-panel" aria-live="polite"></div>
+        </section>
+        </div>
+        ${method(bundle)}
+      </main>
+      <footer class="footer"><span>BoundaryBench ${escapeHtml(bundle.benchmarkVersion)}, Apache-2.0</span><span>Schema <code>${escapeHtml(bundle.schema)}</code></span><a href="${REPO_URL}">github.com/fortunexbt/boundary-bench</a></footer>
+    </div>`;
+
+  const panel = app.querySelector<HTMLDivElement>("#trace-panel");
+  const inspector = app.querySelector<HTMLElement>("#trace");
+
+  const update = (): void => {
+    if (panel)
+      panel.innerHTML = tracePanel(bundle, selectedCandidate, selectedScenario);
+    app
+      .querySelectorAll<HTMLButtonElement>("[data-candidate]")
+      .forEach((button) => {
+        const id = button.dataset.candidate ?? "";
+        const run = findRun(bundle, id, selectedScenario);
+        button.setAttribute("aria-pressed", String(id === selectedCandidate));
+        button.classList.toggle("is-fail", run?.passed === false);
+      });
+    app.querySelectorAll<HTMLButtonElement>("[data-run]").forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(
+          button.dataset.run === `${selectedCandidate}::${selectedScenario}`,
+        ),
       );
+    });
+    app.querySelectorAll<HTMLElement>("[data-row]").forEach((row) => {
+      row.classList.toggle("is-selected", row.dataset.row === selectedScenario);
+    });
   };
 
-  app.innerHTML = `<header class="masthead">
-      <a class="wordmark" href="#top" aria-label="BoundaryBench home"><span>BB</span><b>BOUNDARY//BENCH</b></a>
-      <nav aria-label="Primary"><a href="#benchmark">matrix</a><a href="#trace">receipts</a><a href="#method">method</a><a href="https://github.com/fortunexbt/boundary-bench">source ↗</a></nav>
-    </header>
-    <main id="top">
-      <section class="hero">
-        <div class="hero__copy">
-          <div class="status-line"><span class="pulse"></span> OFFLINE / DETERMINISTIC / BODY-FREE</div>
-          <h1>Agents need<br/><em>crash tests.</em></h1>
-          <p class="hero__lede">BoundaryBench turns invisible control-plane promises into replayable evidence: paired worlds, hard stop and budget boundaries, audience checks, approval gates, and hash-linked receipts.</p>
-          <div class="hero__actions"><a class="button button--solid" href="#benchmark">Inspect the evidence</a><a class="button" href="https://github.com/fortunexbt/boundary-bench#quickstart">Run locally ↗</a></div>
-        </div>
-        <div class="hero__scope" aria-label="Benchmark scope overview">
-          <div class="scope-corners"></div>
-          <span class="eyebrow">EVIDENCE BUNDLE / V${escapeHtml(bundle.benchmarkVersion)}</span>
-          <div class="scope-number">${bundle.scenarios.length}<small>deterministic worlds</small></div>
-          <div class="scope-grid">
-            <span><b>${bundle.runs.length}</b> traces</span><span><b>${AXES.length}</b> score axes</span><span><b>${new Set(bundle.scenarios.map((item) => item.pairId)).size}</b> paired controls</span><span><b>0</b> LLM judges</span>
-          </div>
-          <div class="hash-stamp ${hashVerified ? "hash-stamp--verified" : "hash-stamp--failed"}"><span>${hashVerified ? "✓ CLIENT-VERIFIED SHA-256" : "× HASH VERIFICATION FAILED"}</span><code>${escapeHtml(shortHash(bundle.bundleHash, 24))}</code></div>
-        </div>
-      </section>
-      <section class="ticker" aria-label="Protocol profiles">${bundle.protocolProfiles.map((profile) => `<span><i>${escapeHtml(profile.status)}</i>${escapeHtml(profile.label)} ${escapeHtml(profile.version)}</span>`).join("")}<span><i>method</i>paired benign / adversarial controls</span><span><i>privacy</i>digests, not bodies</span></section>
-      <section class="benchmark" id="benchmark">
-        <div class="section-head"><div><span class="eyebrow">01 / VECTOR SCORECARDS</span><h2>No single number<br/>to hide behind.</h2></div><p>Safety without utility is over-refusal. Utility without hard controls is exposure. BoundaryBench keeps each dimension visible and only credits a pair when both its benign and adversarial worlds pass.</p></div>
-        <div class="candidate-grid" id="candidate-grid">${bundle.candidates
-          .map((candidate) =>
-            candidatePanel(
-              candidate,
-              bundle.scorecards.find(
-                (item) => item.candidateId === candidate.id,
-              )!,
-              candidate.id === selectedCandidate,
-            ),
-          )
-          .join("")}</div>
-        <div class="section-head section-head--matrix"><div><span class="eyebrow">02 / SCENARIO MATRIX</span><h2>Every green cell<br/>has a receipt.</h2></div><p>These two built-in candidates are deliberately illustrative fixtures. They prove the evaluator and dashboard—not the capability of a commercial model.</p></div>
-        ${scenarioMatrix(bundle)}
-      </section>
-      <section class="trace-section" id="trace"><div id="trace-panel"></div></section>
-      <section class="method" id="method">
-        <div class="section-head"><div><span class="eyebrow">03 / METHOD CONTRACT</span><h2>Falsifiable by<br/>construction.</h2></div><p>Each fixture declares trust labels, capabilities, budgets, protocol profile, scheduled control events, and machine-checkable assertions before execution.</p></div>
-        <div class="method-grid">
-          <article><span>01</span><h3>Counterfactual pairs</h3><p>Benign and adversarial variants test useful completion and resistance together, exposing both unsafe compliance and defensive paralysis.</p></article>
-          <article><span>02</span><h3>World transitions</h3><p>Assertions inspect tool calls, audiences, costs, stop order, and terminal events—not an agent’s self-reported intent.</p></article>
-          <article><span>03</span><h3>Body-free receipts</h3><p>Events retain only content digests, causal order, trust, scope, cost, and tags. Raw prompts, tokens, and responses are rejected.</p></article>
-          <article><span>04</span><h3>Replay equality</h3><p>Canonical JSON and a SHA-256 receipt chain make deterministic divergence and post-run mutation immediately visible.</p></article>
-        </div>
-        <aside class="limits"><b>BOUNDARY, NOT CERTIFICATE.</b><span>Passing this synthetic fixture pack is neither a security proof nor protocol certification. Exact predicates cover declared boundaries; production timing, authentication, networking, and stochastic model behavior require separate trials.</span></aside>
-      </section>
-    </main>
-    <footer><span>BOUNDARY//BENCH ${escapeHtml(bundle.benchmarkVersion)}</span><span>Apache-2.0 · deterministic reference bundle · ${escapeHtml(shortHash(bundle.bundleHash, 16))}</span></footer>`;
-
-  document
-    .querySelectorAll<HTMLButtonElement>("[data-candidate]")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        selectedCandidate = button.dataset.candidate ?? selectedCandidate;
-        document
-          .querySelectorAll<HTMLButtonElement>("[data-candidate]")
-          .forEach((item) => {
-            const selected = item.dataset.candidate === selectedCandidate;
-            item.classList.toggle("candidate--selected", selected);
-            item.setAttribute("aria-pressed", String(selected));
-          });
-        drawTrace();
-        document
-          .querySelector("#trace")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const revealInspector = (): void => {
+    if (!inspector) return;
+    const top = inspector.getBoundingClientRect().top;
+    if (top < 0 || top > window.innerHeight * 0.6) {
+      const reduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      inspector.scrollIntoView({
+        behavior: reduced ? "auto" : "smooth",
+        block: "start",
       });
-    });
+    }
+  };
 
-  document
-    .querySelectorAll<HTMLButtonElement>("[data-run]")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        const [candidate, scenario] = (button.dataset.run ?? "").split("::");
-        if (candidate && scenario) {
-          selectedCandidate = candidate;
-          selectedScenario = scenario;
-          drawTrace();
-          document
-            .querySelector("#trace")
-            ?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      });
-    });
+  app.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
 
-  document
-    .querySelectorAll<HTMLButtonElement>("[data-scenario]")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        selectedScenario = button.dataset.scenario ?? selectedScenario;
-        drawTrace();
-        document
-          .querySelector("#trace")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    });
+    const cell = target.closest<HTMLButtonElement>("[data-run]");
+    if (cell) {
+      const [candidate, scenario] = (cell.dataset.run ?? "").split("::");
+      if (candidate && scenario) {
+        selectedCandidate = candidate;
+        selectedScenario = scenario;
+        update();
+        revealInspector();
+      }
+      return;
+    }
 
-  drawTrace();
+    const candidate = target.closest<HTMLButtonElement>("[data-candidate]");
+    if (candidate) {
+      selectedCandidate = candidate.dataset.candidate ?? selectedCandidate;
+      update();
+      return;
+    }
+
+    const scenario = target.closest<HTMLButtonElement>("[data-scenario]");
+    if (scenario) {
+      const insidePanel = panel?.contains(scenario) ?? false;
+      selectedScenario = scenario.dataset.scenario ?? selectedScenario;
+      update();
+      if (insidePanel)
+        panel?.querySelector<HTMLElement>("h3")?.focus({ preventScroll: true });
+      else revealInspector();
+      return;
+    }
+
+    const evidence = target.closest<HTMLButtonElement>("[data-event]");
+    if (evidence) {
+      const row = document.getElementById(`event-${evidence.dataset.event}`);
+      const details = row?.querySelector("details");
+      if (details) {
+        details.open = true;
+        details.querySelector("summary")?.focus({ preventScroll: true });
+        row?.scrollIntoView({ block: "nearest" });
+      }
+    }
+  });
+
+  update();
 }
 
 async function boot(): Promise<void> {
@@ -364,5 +518,5 @@ async function boot(): Promise<void> {
 boot().catch((error: unknown) => {
   const app = document.querySelector<HTMLDivElement>("#app");
   if (app)
-    app.innerHTML = `<div class="fatal"><b>EVIDENCE LOAD FAILED</b><p>${escapeHtml(error instanceof Error ? error.message : String(error))}</p></div>`;
+    app.innerHTML = `<div class="fatal" role="alert"><h1>Results didn't load</h1><p>${escapeHtml(error instanceof Error ? error.message : String(error))}</p><p>Run <code>npm run benchmark</code> to regenerate <code>site/public/results/latest.json</code>, then reload.</p></div>`;
 });
