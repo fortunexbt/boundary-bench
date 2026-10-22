@@ -135,7 +135,11 @@ function tamperTarget(run: ScenarioRun): TraceEvent {
   return target;
 }
 
-function tamperWith(scenario: Scenario, agentId: string, run: ScenarioRun): Tamper {
+function tamperWith(
+  scenario: Scenario,
+  agentId: string,
+  run: ScenarioRun,
+): Tamper {
   const target = tamperTarget(run);
   const reference = scenario.reference[agentId];
   if (!reference) throw new Error(`No reference trace for ${agentId}`);
@@ -218,7 +222,9 @@ function verdictText(passedA: boolean, passedB: boolean): string {
 }
 
 function tamperResult(honest: ScenarioRun, tamper: Tamper): string {
-  const before = new Map(honest.assertions.map((item) => [item.id, item.passed]));
+  const before = new Map(
+    honest.assertions.map((item) => [item.id, item.passed]),
+  );
   const fixed = tamper.run.assertions.filter(
     (item) => item.passed && before.get(item.id) === false,
   );
@@ -226,18 +232,19 @@ function tamperResult(honest: ScenarioRun, tamper: Tamper): string {
     (item) => !item.passed && before.get(item.id) === true,
   );
   const integrity = broken.filter((item) => item.axis === "integrity");
-  const parts = [
-    `Line ${tamper.deleted} is gone.`,
+  const gone =
     fixed.length > 0
-      ? `${fixed.length} failed check${fixed.length === 1 ? " now passes" : "s now pass"},`
-      : "",
-    integrity.length > 0
-      ? `but the evidence no longer verifies: ${integrity
-          .map((item) => (item.id.endsWith("receipt-chain") ? "the receipt chain is broken" : "the replay ends on a different hash"))
-          .join(" and ")}. The edit is caught.`
-      : "and the evidence still verifies.",
-  ];
-  return parts.filter(Boolean).join(" ");
+      ? `Line ${tamper.deleted} is gone and ${fixed.length} failed check${fixed.length === 1 ? " now passes" : "s now pass"}.`
+      : `Line ${tamper.deleted} is gone.`;
+  if (integrity.length === 0) return `${gone} The evidence still verifies.`;
+  const reasons = integrity
+    .map((item) =>
+      item.id.endsWith("receipt-chain")
+        ? "the receipt chain is broken"
+        : "the replay ends on a different hash",
+    )
+    .join(" and ");
+  return `${gone} ${fixed.length > 0 ? "But the" : "The"} evidence no longer verifies: ${reasons}. The edit is caught.`;
 }
 
 export function createLab(
@@ -346,9 +353,12 @@ export function createLab(
       );
     }
     timers.push(
-      window.setTimeout(() => {
-        if (current === token) finish();
-      }, (lastStep + 1) * STEP_MS),
+      window.setTimeout(
+        () => {
+          if (current === token) finish();
+        },
+        (lastStep + 1) * STEP_MS,
+      ),
     );
   };
 

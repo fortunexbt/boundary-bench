@@ -90,7 +90,8 @@ async function proofHtml(bundle: ResultBundle, ms: number): Promise<string> {
     return `<p class="proof is-fail">Recomputed ${bundle.runs.length} runs in ${ms} ms, but the published results could not be loaded (HTTP ${response.status}).</p>`;
   const published = (await response.json()) as ResultBundle;
   const errors = verifyResultBundle(published, scenarios);
-  const matches = errors.length === 0 && published.bundleHash === bundle.bundleHash;
+  const matches =
+    errors.length === 0 && published.bundleHash === bundle.bundleHash;
   const hash = `<code title="${bundle.bundleHash}">${bundle.bundleHash.slice(0, 16)}…</code>`;
   return matches
     ? `<p class="proof is-pass">${verdictIcon(true)}<span>Recomputed ${bundle.runs.length} runs in ${ms} ms. Bundle hash ${hash} matches the <a href="./results/latest.json">published results</a>.</span></p>`
@@ -124,5 +125,7 @@ benchBody.addEventListener("click", (event) => {
   if (!button) return;
   lab.load(button.dataset.pair!, button.dataset.agent!);
   document.querySelector("#lab")!.scrollIntoView({ block: "start" });
-  document.querySelector<HTMLElement>("#lab-stage")!.focus({ preventScroll: true });
+  document
+    .querySelector<HTMLElement>("#lab-stage")!
+    .focus({ preventScroll: true });
 });

@@ -12,9 +12,11 @@
   --pass-soft: #d9ecdf;
   --fail: #b42f1b;
   --fail-soft: #f6dcd4;
-  --sans: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next",
+  --sans:
+    "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next",
     system-ui, sans-serif;
-  --mono: "Atkinson Hyperlegible Mono Variable", "Atkinson Hyperlegible Mono",
+  --mono:
+    "Atkinson Hyperlegible Mono Variable", "Atkinson Hyperlegible Mono",
     ui-monospace, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --gutter: clamp(1rem, 0.4rem + 2.6vw, 3rem);
@@ -216,7 +218,8 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.75rem;
-  padding-block: clamp(1.75rem, 1rem + 3vw, 3.5rem) clamp(3rem, 2rem + 4vw, 5.5rem);
+  padding-block: clamp(1.75rem, 1rem + 3vw, 3.5rem)
+    clamp(3rem, 2rem + 4vw, 5.5rem);
 }
 
 .lab__intro {
@@ -385,7 +388,9 @@ h1 {
   color: var(--ink);
   font-weight: 800;
   font-size: 1.0625rem;
-  box-shadow: 0 1px 0 rgb(21 23 26 / 0.35), 0 6px 16px -8px rgb(21 23 26 / 0.45);
+  box-shadow:
+    0 1px 0 rgb(21 23 26 / 0.35),
+    0 6px 16px -8px rgb(21 23 26 / 0.45);
   transition: transform 140ms var(--ease-out);
 }
 

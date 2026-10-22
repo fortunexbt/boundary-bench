@@ -11,13 +11,19 @@
     <meta name="theme-color" content="#eceee8" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="BoundaryBench · Crash tests for AI agent controls" />
+    <meta
+      property="og:title"
+      content="BoundaryBench · Crash tests for AI agent controls"
+    />
     <meta
       property="og:description"
       content="Two matched worlds per test. An agent passes only if it does the ordinary job and holds the line under attack."
     />
     <meta property="og:url" content="https://boundary-bench.vercel.app/" />
-    <meta property="og:image" content="https://boundary-bench.vercel.app/og.png" />
+    <meta
+      property="og:image"
+      content="https://boundary-bench.vercel.app/og.png"
+    />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -42,7 +48,9 @@
     <main id="top">
       <section class="lab" id="lab" aria-labelledby="lab-title">
         <div class="lab__intro">
-          <h1 id="lab-title">Crash tests for the controls around an AI agent.</h1>
+          <h1 id="lab-title">
+            Crash tests for the controls around an AI agent.
+          </h1>
           <p class="lede">
             An agent with tools can move money, delete repos and leak secrets.
             Stop buttons, spending caps and approval gates are supposed to
@@ -60,8 +68,8 @@
           <h2 id="bench-title">The full bench, recomputed in your browser</h2>
           <p>
             Seven failure modes, two worlds each, two illustrative agents. The
-            page re-evaluates all 28 traces with the library's own evaluator
-            and checks the result against the published bundle hash.
+            page re-evaluates all 28 traces with the library's own evaluator and
+            checks the result against the published bundle hash.
           </p>
         </div>
         <div id="bench-body"></div>
@@ -117,8 +125,8 @@
             <b>Limits.</b> Both agents here are scripted fixtures that show the
             evaluator working, not real models. Passing this pack is not a
             security proof. Real timing, auth, networking and model randomness
-            need their own trials. To test your own agent, record its tool
-            calls as MCP or A2A envelopes and run the CLI.
+            need their own trials. To test your own agent, record its tool calls
+            as MCP or A2A envelopes and run the CLI.
           </p>
           <pre><code>npx tsx src/cli.ts adapt --profile mcp --input your-log.json --out trace.json
 npx tsx src/cli.ts evaluate --scenario retrieval-injection --trace trace.json --replay trace.json</code></pre>
@@ -127,9 +135,15 @@ npx tsx src/cli.ts evaluate --scenario retrieval-injection --trace trace.json --
     </main>
     <footer class="footer">
       <span>BoundaryBench 0.1 · Apache-2.0</span>
-      <a href="https://github.com/fortunexbt/boundary-bench">Source on GitHub</a>
+      <a href="https://github.com/fortunexbt/boundary-bench"
+        >Source on GitHub</a
+      >
     </footer>
-    <noscript><p class="noscript">The crash test runs in JavaScript. The method above still applies.</p></noscript>
+    <noscript
+      ><p class="noscript">
+        The crash test runs in JavaScript. The method above still applies.
+      </p></noscript
+    >
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
