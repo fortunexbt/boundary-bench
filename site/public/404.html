@@ -11,43 +11,40 @@
         min-height: 100vh;
         display: grid;
         place-content: center;
-        gap: 1rem;
-        padding: 1.5rem;
-        background: #eceee8;
-        color: #15171a;
+        gap: 12px;
+        padding: 24px;
+        background: #ffffff;
+        color: #14161b;
         font:
-          1.0625rem/1.55 system-ui,
+          15px/1.6 system-ui,
+          -apple-system,
           sans-serif;
       }
       h1 {
         margin: 0;
-        font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
-        line-height: 1;
-        letter-spacing: -0.03em;
+        font-size: 22px;
+        line-height: 1.2;
       }
       p {
         margin: 0;
-        max-width: 34ch;
-        color: #474c52;
+        max-width: 40ch;
+        color: #3b404b;
       }
       a {
-        justify-self: start;
-        padding: 0.75rem 1.125rem;
-        border-radius: 6px;
-        background: #f2c200;
-        color: #15171a;
-        font-weight: 700;
-        text-decoration: none;
+        color: inherit;
+        text-underline-offset: 3px;
       }
       a:focus-visible {
-        outline: 3px solid #15171a;
-        outline-offset: 3px;
+        outline: 2px solid #1f5fd6;
+        outline-offset: 2px;
       }
     </style>
   </head>
   <body>
-    <h1>No test lives here.</h1>
-    <p>This page is not part of the bench. The crash test is one click away.</p>
-    <a href="/">Run a crash test</a>
+    <h1>Nothing here</h1>
+    <p>
+      This address isn't part of BoundaryBench.
+      <a href="/">Go to the scenarios</a>.
+    </p>
   </body>
 </html>
