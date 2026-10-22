@@ -29,23 +29,14 @@ function runFor(
   return run;
 }
 
-function cell(run: ScenarioRun, label: string): string {
-  return `<td class="${run.passed ? "is-pass" : "is-fail"}">${verdictIcon(run.passed)}<span class="sr-only">${label} ${run.passed ? "passed" : "failed"}</span></td>`;
+function world(run: ScenarioRun, label: "A" | "B"): string {
+  return `<span class="${run.passed ? "is-pass" : "is-fail"}">${label}${verdictIcon(run.passed)}<span class="sr-only"> ${run.passed ? "passed" : "failed"},</span></span>`;
 }
 
 function matrixHtml(bundle: ResultBundle): string {
   const agentIds = Object.keys(AGENTS).reverse();
   const head = agentIds
-    .map(
-      (id) =>
-        `<th scope="colgroup" colspan="3">${escapeHtml(AGENTS[id]!.name)}</th>`,
-    )
-    .join("");
-  const sub = agentIds
-    .map(
-      () =>
-        '<th scope="col">World A</th><th scope="col">World B</th><th scope="col">Pair</th>',
-    )
+    .map((id) => `<th scope="col">${escapeHtml(AGENTS[id]!.name)}</th>`)
     .join("");
   const rows = PAIRS.map((pair) => {
     const cells = agentIds
@@ -53,14 +44,14 @@ function matrixHtml(bundle: ResultBundle): string {
         const a = runFor(bundle, agentId, pair.pairId, "benign");
         const b = runFor(bundle, agentId, pair.pairId, "adversarial");
         const passed = a.passed && b.passed;
-        return `${cell(a, "World A")}${cell(b, "World B")}<td class="pair"><button type="button" class="pair-btn ${passed ? "is-pass" : "is-fail"}" data-pair="${pair.pairId}" data-agent="${agentId}">${passed ? "Pass" : "Fail"}<span class="sr-only">: open ${escapeHtml(pair.name)} with the ${escapeHtml(AGENTS[agentId]!.name)} in the crash test</span></button></td>`;
+        return `<td><span class="worlds">${world(a, "A")}${world(b, "B")}</span><button type="button" class="pair-btn ${passed ? "is-pass" : "is-fail"}" data-pair="${pair.pairId}" data-agent="${agentId}">${passed ? "Pass" : "Fail"}<span class="sr-only">: open ${escapeHtml(pair.name)} with the ${escapeHtml(AGENTS[agentId]!.name)} in the crash test</span></button></td>`;
       })
       .join("");
     return `<tr><th scope="row">${escapeHtml(pair.name)}</th>${cells}</tr>`;
   }).join("");
   return `<div class="table-wrap"><table class="matrix">
-      <caption class="sr-only">Pass or fail for each failure mode, world and agent</caption>
-      <thead><tr><td></td>${head}</tr><tr><td></td>${sub}</tr></thead>
+      <caption>Each pair, World A and World B. Open any result in the crash test.</caption>
+      <thead><tr><td></td>${head}</tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
 }
@@ -108,7 +99,7 @@ const benchBody = document.querySelector<HTMLElement>("#bench-body")!;
 const started = performance.now();
 const bundle = buildResultBundle(scenarios);
 const elapsed = Math.max(1, Math.round(performance.now() - started));
-benchBody.innerHTML = `<div class="proof-slot"><p class="proof">Checking against the published results…</p></div>${matrixHtml(bundle)}${axesHtml(bundle)}`;
+benchBody.innerHTML = `<div class="proof-slot"><p class="proof">Checking against the published results…</p></div><div class="bench-grid">${matrixHtml(bundle)}${axesHtml(bundle)}</div>`;
 const proofSlot = benchBody.querySelector<HTMLElement>(".proof-slot")!;
 proofHtml(bundle, elapsed)
   .then((html) => {

@@ -873,26 +873,36 @@ table {
   font-variant-numeric: tabular-nums;
 }
 
+.bench-grid {
+  display: grid;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+@media (min-width: 70rem) {
+  .bench-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+caption {
+  margin-bottom: 0.75rem;
+  text-align: left;
+  font-weight: 700;
+}
+
 .matrix {
-  min-width: 40rem;
+  width: 100%;
 }
 
 .matrix th,
 .matrix td {
-  padding: 0.5rem 0.75rem;
-  text-align: center;
+  padding: 0.5rem 0.5rem;
   border-bottom: 1px solid var(--rule);
 }
 
 .matrix thead th {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--ink-2);
-}
-
-.matrix thead tr:first-child th {
-  font-size: 1rem;
-  color: var(--ink);
+  text-align: left;
   border-bottom: 2px solid var(--ink);
 }
 
@@ -900,17 +910,25 @@ table {
   text-align: left;
   font-weight: 700;
   padding-left: 0;
+}
+
+.matrix td {
   white-space: nowrap;
 }
 
-.matrix td .icon {
-  width: 1.125rem;
-  height: 1.125rem;
-  vertical-align: -0.2em;
+.worlds {
+  display: inline-flex;
+  gap: 0.625rem;
+  margin-right: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  vertical-align: middle;
 }
 
-.matrix td.pair {
-  padding-right: 1.75rem;
+.worlds > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
 }
 
 .pair-btn {
@@ -944,12 +962,6 @@ table {
   .pair-btn.is-fail:hover {
     background: var(--fail-soft);
   }
-}
-
-.axes caption {
-  margin-bottom: 0.5rem;
-  text-align: left;
-  font-weight: 700;
 }
 
 .axes th,
@@ -1086,5 +1098,25 @@ table {
 
   .run {
     justify-self: stretch;
+  }
+}
+
+#bench-body {
+  display: grid;
+  gap: 1.75rem;
+}
+
+@media (max-width: 40rem) {
+  .matrix tbody th {
+    font-size: 0.9375rem;
+  }
+
+  .worlds {
+    display: flex;
+    margin: 0 0 0.375rem;
+  }
+
+  .pair-btn {
+    min-width: 3.75rem;
   }
 }
