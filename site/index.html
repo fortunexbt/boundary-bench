@@ -38,6 +38,7 @@
         <div class="intro__title">
           <h1>BoundaryBench</h1>
           <nav aria-label="Primary">
+            <a href="#results">Results</a>
             <a href="#scenarios">Scenarios</a>
             <a href="#check">Check a trace</a>
             <a href="#method">Method</a>
@@ -66,12 +67,12 @@
             <dt>Needs</dt>
             <dd>Node 22+ and any MCP client</dd>
           </div>
-          <div>
-            <dt>Recorded runs on this page</dt>
-            <dd>None yet</dd>
-          </div>
         </dl>
       </header>
+
+      <section class="results" id="results" aria-labelledby="results-title">
+        <!--results-->
+      </section>
 
       <main class="workspace" id="scenarios">
         <section class="list" aria-labelledby="scenarios-title">
@@ -92,7 +93,7 @@
         </aside>
         <section class="check" id="check" aria-labelledby="check-title">
           <div class="section-title">
-            <h2 id="check-title">Check a trace</h2>
+            <h2 id="check-title" tabindex="-1">Check a trace</h2>
             <p>Read in this tab with the CLI's evaluator. Never uploaded.</p>
           </div>
           <label class="drop" id="drop">
@@ -105,9 +106,8 @@
           </label>
           <div id="result" aria-live="polite">
             <p class="empty">
-              No trace loaded. This page ships no example run: none has been
-              recorded here with a real agent yet, and a made-up one would prove
-              nothing.
+              No trace loaded. Open one of the recorded runs above, or a trace
+              of your own.
             </p>
           </div>
         </section>

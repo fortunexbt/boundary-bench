@@ -16,6 +16,7 @@ const setup = document.querySelector<HTMLElement>("#setup")!;
 const result = document.querySelector<HTMLElement>("#result")!;
 const drop = document.querySelector<HTMLLabelElement>("#drop")!;
 const fileInput = document.querySelector<HTMLInputElement>("#trace-file")!;
+const checkTitle = document.querySelector<HTMLElement>("#check-title")!;
 
 function select(id: string, focus = false): void {
   const scenario = findScenario(id);
@@ -34,6 +35,14 @@ document.addEventListener("click", (event) => {
   const target = event.target as HTMLElement;
   const scenarioButton = target.closest<HTMLButtonElement>("[data-scenario]");
   if (scenarioButton) select(scenarioButton.dataset.scenario!, true);
+
+  const runButton = target.closest<HTMLButtonElement>("[data-run]");
+  if (runButton) {
+    select(runButton.dataset.runScenario!);
+    void load(runButton.dataset.label!, () =>
+      fetchText(`./${runButton.dataset.run!}`),
+    ).then(() => checkTitle.focus());
+  }
 
   const copyButton = target.closest<HTMLButtonElement>("[data-copy]");
   if (copyButton) {
@@ -119,18 +128,24 @@ function evaluationHtml(evaluation: Evaluation, events: TraceEvent[]): string {
     </ol>`;
 }
 
-async function load(file: File): Promise<void> {
+async function load(name: string, text: () => Promise<string>): Promise<void> {
   try {
-    const events = parseTrace(await file.text());
+    const events = parseTrace(await text());
     result.innerHTML = evaluationHtml(evaluateTrace(events), events);
   } catch (error) {
-    result.innerHTML = `<p class="error"><b>Could not read ${escapeHtml(file.name)}.</b> ${escapeHtml(error instanceof Error ? error.message : String(error))}</p>`;
+    result.innerHTML = `<p class="error"><b>Could not read ${escapeHtml(name)}.</b> ${escapeHtml(error instanceof Error ? error.message : String(error))}</p>`;
   }
+}
+
+async function fetchText(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${url} returned ${response.status}.`);
+  return response.text();
 }
 
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
-  if (file) void load(file);
+  if (file) void load(file.name, () => file.text());
 });
 
 drop.addEventListener("dragover", (event) => {
@@ -142,5 +157,5 @@ drop.addEventListener("drop", (event) => {
   event.preventDefault();
   drop.classList.remove("is-over");
   const file = event.dataTransfer?.files[0];
-  if (file) void load(file);
+  if (file) void load(file.name, () => file.text());
 });

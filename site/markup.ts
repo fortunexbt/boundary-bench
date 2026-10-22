@@ -1,5 +1,11 @@
+import type { ScenarioTally } from "../src/core/report.js";
 import { findScenario, SCENARIOS } from "../src/core/scenarios.js";
-import type { Boundary, CheckRole, Scenario } from "../src/core/types.js";
+import type {
+  Boundary,
+  CheckRole,
+  Scenario,
+  Verdict,
+} from "../src/core/types.js";
 
 /** The scenario shown first, prerendered into index.html at build time. */
 export const FIRST_SCENARIO = "bill-injection";
@@ -123,4 +129,70 @@ export function listHtml(selected: string): string {
     </button>
   </li>`,
   ).join("");
+}
+
+export interface RecordedBatch {
+  client: string;
+  date: string;
+  model: string;
+  /** What the transcripts show, per scenario, in a sentence or three. */
+  notes: Record<string, string>;
+  path: string;
+  runs: { file: string; run: string; scenario: string; verdict: Verdict }[];
+  tallies: ScenarioTally[];
+}
+
+const VERDICT_LABEL: Record<Verdict, string> = {
+  pass: "Pass",
+  fail: "Fail",
+  inconclusive: "Inconclusive",
+};
+const VERDICTS = Object.keys(VERDICT_LABEL) as Verdict[];
+
+export function resultsHtml(batch: RecordedBatch): string {
+  const percent = (x: number) => Math.round(x * 100);
+  const sizes = batch.tallies.map((row) => row.n);
+  const rows = batch.tallies
+    .map(({ n, rates, scenario }) => {
+      const runs = batch.runs
+        .filter((run) => run.scenario === scenario.id)
+        .map(
+          (run) =>
+            `<button type="button" class="run run--${run.verdict}" data-run="${run.file}" data-run-scenario="${scenario.id}" data-label="${escapeHtml(`${scenario.id} run ${run.run}`)}"><span class="sr-only">Open ${escapeHtml(scenario.title)} run </span>${run.run}<span class="sr-only">, ${run.verdict}</span></button>`,
+        )
+        .join("");
+      const cells = VERDICTS.map((verdict) => {
+        const rate = rates[verdict];
+        return `<td class="rate${rate.count > 0 ? ` rate--${verdict}` : ""}" data-label="${VERDICT_LABEL[verdict]}"><b>${rate.count}/${n}</b><span>${percent(rate.low)}–${percent(rate.high)}%</span></td>`;
+      }).join("");
+      return `<tr>
+        <th scope="row">
+          <span class="results__name">${escapeHtml(scenario.title)} <span class="tag tag--${scenario.boundary}">${BOUNDARY[scenario.boundary]}</span></span>
+          <span class="results__note">${escapeHtml(batch.notes[scenario.id] ?? "")}</span>
+          <span class="results__runs">${runs}</span>
+        </th>
+        <td class="results__n">${n}</td>
+        ${cells}
+      </tr>`;
+    })
+    .join("");
+  return `<div class="section-title">
+      <h2 id="results-title">Recorded runs</h2>
+      <p>Headless Claude Code ${escapeHtml(batch.client.replace(" (Claude Code)", ""))} with <code>${escapeHtml(batch.model)}</code>, ${batch.runs.length} runs on ${escapeHtml(batch.date)}. Open any run to see its trace scored below.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th scope="col">Scenario and what happened</th>
+            <th scope="col" class="results__n">N</th>
+            <th scope="col">Pass</th>
+            <th scope="col">Fail</th>
+            <th scope="col">Inconclusive</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="results__caveat">Ranges are 95% Wilson intervals. With ${Math.min(...sizes)} to ${Math.max(...sizes)} runs per scenario they are wide: 6 passes out of 6 still allows a true pass rate as low as 61%. This is one model, one client version and one day. The traces, transcripts and the runner are in <a href="https://github.com/fortunexbt/boundary-bench/tree/showcase/2026-10/${batch.path}"><code>${batch.path}</code></a>.</p>`;
 }

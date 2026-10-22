@@ -11,7 +11,8 @@
   --pass-bg: #e5f3ea;
   --fail: #b3261e;
   --fail-bg: #fcebea;
-  --meter: #d5d9df;
+  --warn: #6b4c00;
+  --warn-bg: #fdf3d8;
   --focus: #1f5fd6;
   --sans:
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
@@ -157,12 +158,14 @@ button {
 
 .intro nav {
   display: flex;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 4px 20px;
 }
 
 .intro nav a {
   color: var(--muted);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .intro nav a:hover {
@@ -191,26 +194,6 @@ button {
 
 .facts dd {
   font-size: 13px;
-}
-
-.status {
-  display: inline-block;
-  padding: 0 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 550;
-  line-height: 20px;
-  white-space: nowrap;
-}
-
-.status--pass {
-  background: var(--pass-bg);
-  color: var(--pass);
-}
-
-.status--fail {
-  background: var(--fail-bg);
-  color: var(--fail);
 }
 
 .section-title {
@@ -351,6 +334,130 @@ button {
   html {
     scroll-behavior: smooth;
   }
+}
+
+/* Recorded runs */
+
+.results {
+  padding-block: 28px 8px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--line);
+}
+
+.results-table th,
+.results-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.results-table thead th {
+  padding-block: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.results-table tbody th {
+  max-width: 62ch;
+  padding-left: 0;
+  font-weight: 400;
+}
+
+.results__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-weight: 600;
+}
+
+.results__note {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.results__runs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.run {
+  min-width: 34px;
+  padding: 0 6px;
+  border-radius: 4px;
+  font: 500 12px/24px var(--mono);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.run:hover {
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.run--pass {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+
+.run--fail {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+
+.run--inconclusive {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.rate {
+  width: 7.5em;
+  color: var(--muted);
+}
+
+.rate b {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.rate span {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.rate--pass b {
+  color: var(--pass);
+}
+
+.rate--fail b {
+  color: var(--fail);
+}
+
+.rate--inconclusive b {
+  color: var(--warn);
+}
+
+.results__n {
+  width: 3em;
+  color: var(--muted);
+}
+
+.results__caveat {
+  max-width: 88ch;
+  margin-top: 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* Workspace: scenarios on the left, setup on the right */
@@ -712,8 +819,8 @@ blockquote {
 }
 
 .verdict--inconclusive {
-  background: #fdf3d8;
-  color: #6b4c00;
+  background: var(--warn-bg);
+  color: var(--warn);
 }
 
 .assertions {
@@ -815,7 +922,7 @@ blockquote {
   }
 
   .intro nav {
-    gap: 16px;
+    gap: 4px 16px;
   }
 
   .facts {
@@ -825,6 +932,37 @@ blockquote {
 
   .scenario__summary {
     display: none;
+  }
+
+  .results-table thead,
+  .results__n {
+    display: none;
+  }
+
+  .results-table tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-block: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .results-table tbody th {
+    grid-column: 1 / -1;
+    padding: 0 0 10px;
+    border: 0;
+  }
+
+  .results-table td {
+    width: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .rate::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
   }
 
   .inspector {
