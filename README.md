@@ -2,18 +2,27 @@
 
 [![CI](https://github.com/fortunexbt/boundary-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/fortunexbt/boundary-bench/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/fortunexbt/boundary-bench/actions/workflows/codeql.yml/badge.svg)](https://github.com/fortunexbt/boundary-bench/actions/workflows/codeql.yml)
-[![Pages](https://github.com/fortunexbt/boundary-bench/actions/workflows/pages.yml/badge.svg)](https://github.com/fortunexbt/boundary-bench/actions/workflows/pages.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-b7f34a.svg)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-15171a.svg)](LICENSE)
 
-![BoundaryBench dashboard](output/playwright/hero.png)
+**Live demo: [boundary-bench-beryl.vercel.app](https://boundary-bench-beryl.vercel.app/)**
+
+[![BoundaryBench crash test running the poisoned search result pair in the browser](docs/screenshot.webp)](https://boundary-bench-beryl.vercel.app/)
 
 > Agents need crash tests.
 
-BoundaryBench is a deterministic, offline evaluator for the control plane around an agent. It turns stop, budget, scope, approval, injection-resistance, and evidence-integrity claims into paired synthetic worlds with machine-checkable assertions.
+BoundaryBench is a deterministic, offline evaluator for the controls around an agent: stop buttons, spending caps, credential scope, approval gates, resistance to injected instructions, and the integrity of the evidence. Each failure mode is a pair of synthetic worlds, one ordinary and one under attack, checked by machine-readable assertions over a hash-linked trace.
 
 The v0.1 reference pack ships 14 scenarios, 28 hash-linked traces, two protocol profiles, four independent score axes, and zero LLM judges. Its built-in candidates are deliberately illustrative fixtures: they prove the evaluator and evidence explorer, not the capability of a commercial model.
 
-**[Open the live evidence explorer](https://fortunexbt.github.io/boundary-bench/)**
+## The demo
+
+The page runs the library itself in the browser. Nothing is called over the network except the published result bundle.
+
+- **Crash test.** Pick a failure mode and an agent, then run it. Both worlds play side by side, each event shows its receipt hash, and every check reports pass or fail with the event it cites.
+- **Cover-up.** Delete the incriminating line from World B's log and the page re-evaluates it. The behaviour checks may now pass, but the receipt chain or the replay hash breaks, so the edit is caught.
+- **Full bench.** All 28 runs are recomputed on load with `buildResultBundle` and checked against `results/latest.json` with `verifyResultBundle`. The bundle hash has to match.
+
+Demo limits: both agents are scripted fixtures, not models, and their traces are fixed. To test a real agent, record its tool calls and use the CLI below.
 
 ## Why this exists
 
@@ -66,7 +75,7 @@ npm run benchmark:verify
 npm run dev
 ```
 
-`npm run dev` serves the evidence explorer at http://localhost:5173. The evaluator has no runtime dependencies and the reference run makes no network requests.
+`npm run dev` serves the demo at http://localhost:5173. The evaluator's only runtime dependency is `@noble/hashes`, so the same code runs in Node and in the browser, and the reference run makes no network requests.
 
 ## CLI
 
@@ -147,7 +156,8 @@ Key modules:
 - [`src/core/adapters.ts`](src/core/adapters.ts) maps body-free MCP and A2A recorder envelopes into one event model.
 - [`src/core/signing.ts`](src/core/signing.ts) optionally signs the bundle hash with Ed25519 producer identity.
 - [`src/fixtures/scenarios.ts`](src/fixtures/scenarios.ts) defines the deterministic reference worlds and traces.
-- [`site/main.ts`](site/main.ts) verifies the bundle hash in the browser before rendering scorecards and trace witnesses.
+- [`site/lab.ts`](site/lab.ts) runs one counterfactual pair in the browser and re-evaluates a tampered trace.
+- [`site/main.ts`](site/main.ts) recomputes the full bundle in the browser and checks it against the published hash.
 
 ## Evidence contract
 
