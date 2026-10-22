@@ -240,7 +240,11 @@ function tamperResult(honest: ScenarioRun, tamper: Tamper): string {
   return parts.filter(Boolean).join(" ");
 }
 
-export function createLab(controls: HTMLElement, stage: HTMLElement) {
+export function createLab(
+  controls: HTMLElement,
+  stage: HTMLElement,
+  status: HTMLElement,
+) {
   const state: LabState = {
     agentId: "naive-reference",
     pairId: PAIRS[0]!.pairId,
@@ -309,8 +313,8 @@ export function createLab(controls: HTMLElement, stage: HTMLElement) {
           }
         </div>
       </div>
-      <p class="sr-only" role="status">${escapeHtml(`${agent.name}, ${copy.name}: World A ${runA.passed ? "passed" : "failed"}, World B ${finalB.passed ? "passed" : "failed"}, pair ${pairPassed ? "passed" : "failed"}.`)}</p>
     </div>`;
+    status.textContent = `${agent.name}, ${copy.name}: World A ${runA.passed ? "passed" : "failed"}, World B ${finalB.passed ? "passed" : "failed"}, pair ${pairPassed ? "passed" : "failed"}.`;
 
     const flow = stage.querySelector<HTMLElement>(".flow")!;
     const label = stage.querySelector<HTMLElement>("[data-phase-label]")!;
@@ -358,6 +362,8 @@ export function createLab(controls: HTMLElement, stage: HTMLElement) {
   controls.querySelector("[data-run]")?.addEventListener("click", () => {
     state.tamper = null;
     render(true);
+    if (stage.getBoundingClientRect().top > window.innerHeight * 0.6)
+      stage.scrollIntoView({ block: "start" });
   });
   stage.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
