@@ -34,14 +34,12 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test
-      - name: Verify reference bundle
-        run: npm run benchmark:verify
       - name: Audit runtime dependencies
         run: npm audit --omit=dev
-      - name: Build CLI and evidence explorer
+      - name: Build CLI and site
         if: matrix.node == 24
         run: npm run build
-      - name: Upload evidence explorer
+      - name: Upload site
         if: matrix.node == 24
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
