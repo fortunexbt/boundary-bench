@@ -3,24 +3,132 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BoundaryBench · Crash tests for AI agent controls</title>
     <meta
       name="description"
-      content="BoundaryBench is a deterministic, offline control-plane benchmark for agent safety, utility, stops, budgets, scopes, approvals, and evidence integrity."
+      content="Run a deterministic crash test on an AI agent's stop button, budget, credentials and approval gates in your browser. Each test runs a benign and an adversarial world side by side."
     />
-    <meta name="theme-color" content="#0a0c0b" />
-    <title>BoundaryBench — Agent control-plane evidence</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0c0b'/%3E%3Cpath d='M14 12h22c9 0 14 4 14 11 0 5-3 8-7 9 6 1 9 4 9 10 0 7-5 11-15 11H14V12zm11 9v8h10c3 0 5-1 5-4s-2-4-5-4H25zm0 16v8h12c3 0 5-1 5-4s-2-4-5-4H25z' fill='%23b7f34a'/%3E%3C/svg%3E"
+    <meta name="theme-color" content="#eceee8" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="BoundaryBench · Crash tests for AI agent controls" />
+    <meta
+      property="og:description"
+      content="Two matched worlds per test. An agent passes only if it does the ordinary job and holds the line under attack."
     />
+    <meta property="og:url" content="https://boundary-bench.vercel.app/" />
+    <meta property="og:image" content="https://boundary-bench.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <a class="skip-link" href="#benchmark">Skip to benchmark results</a>
-    <div id="app">
-      <div class="boot" role="status">
-        VERIFYING EVIDENCE BUNDLE<span>_</span>
-      </div>
-    </div>
-    <script type="module" src="/main.ts"></script>
+    <a class="skip-link" href="#lab">Skip to the crash test</a>
+    <header class="masthead">
+      <a class="wordmark" href="#top" aria-label="BoundaryBench, back to top">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M16 3v9M16 12 7 21v8M16 12l9 9v8" />
+          <circle cx="16" cy="3.5" r="2.5" />
+        </svg>
+        <b>BoundaryBench</b>
+      </a>
+      <nav aria-label="Primary">
+        <a href="#lab">Run a test</a>
+        <a href="#bench">Full bench</a>
+        <a href="#how">How it works</a>
+        <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
+      </nav>
+    </header>
+    <main id="top">
+      <section class="lab" id="lab" aria-labelledby="lab-title">
+        <div class="lab__intro">
+          <h1 id="lab-title">Crash tests for the controls around an AI agent.</h1>
+          <p class="lede">
+            An agent with tools can move money, delete repos and leak secrets.
+            Stop buttons, spending caps and approval gates are supposed to
+            prevent that. BoundaryBench checks they hold, by running every test
+            in two matched worlds: one ordinary, one under attack.
+          </p>
+          <div id="lab-controls" class="controls"></div>
+        </div>
+        <div id="lab-stage" class="stage" aria-live="polite"></div>
+      </section>
+
+      <section class="bench" id="bench" aria-labelledby="bench-title">
+        <div class="section-head">
+          <h2 id="bench-title">The full bench, recomputed in your browser</h2>
+          <p>
+            Seven failure modes, two worlds each, two illustrative agents. The
+            page re-evaluates all 28 traces with the library's own evaluator
+            and checks the result against the published bundle hash.
+          </p>
+        </div>
+        <div id="bench-body"></div>
+      </section>
+
+      <section class="how" id="how" aria-labelledby="how-title">
+        <div class="section-head">
+          <h2 id="how-title">How it works</h2>
+          <p>
+            No model is called and no LLM grades anything. A test is a scripted
+            world, a recorded trace of what the agent did, and checks that read
+            the trace.
+          </p>
+        </div>
+        <dl class="how__list">
+          <div>
+            <dt>Paired worlds</dt>
+            <dd>
+              Each failure mode has an ordinary world and an attacked one. An
+              agent that refuses everything passes the attack and fails the
+              ordinary job. An agent that obeys everything does the reverse.
+              Only a pair where both halves pass counts.
+            </dd>
+          </div>
+          <div>
+            <dt>Checks on actions, not words</dt>
+            <dd>
+              Checks look at which tools were called, in what order, with which
+              credential and at what cost, and whether a stop, halt or
+              quarantine was recorded. What the agent says about itself is not
+              evidence.
+            </dd>
+          </div>
+          <div>
+            <dt>Hash-linked receipts</dt>
+            <dd>
+              Every event carries the SHA-256 of the one before it. Delete or
+              edit a line and the chain stops verifying, and a replay of the
+              same run no longer ends on the same hash.
+            </dd>
+          </div>
+          <div>
+            <dt>No bodies kept</dt>
+            <dd>
+              Traces store digests, order, trust level, credential audience,
+              cost and tags. Prompts, responses, tokens and secrets are
+              rejected, so a trace can be shared.
+            </dd>
+          </div>
+        </dl>
+        <aside class="limits">
+          <p>
+            <b>Limits.</b> Both agents here are scripted fixtures that show the
+            evaluator working, not real models. Passing this pack is not a
+            security proof. Real timing, auth, networking and model randomness
+            need their own trials. To test your own agent, record its tool
+            calls as MCP or A2A envelopes and run the CLI.
+          </p>
+          <pre><code>npx tsx src/cli.ts adapt --profile mcp --input your-log.json --out trace.json
+npx tsx src/cli.ts evaluate --scenario retrieval-injection --trace trace.json --replay trace.json</code></pre>
+        </aside>
+      </section>
+    </main>
+    <footer class="footer">
+      <span>BoundaryBench 0.1 · Apache-2.0</span>
+      <a href="https://github.com/fortunexbt/boundary-bench">Source on GitHub</a>
+    </footer>
+    <noscript><p class="noscript">The crash test runs in JavaScript. The method above still applies.</p></noscript>
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
