@@ -4,4 +4,3 @@ dist/
 dist-site/
 node_modules/
 output/
-site/public/results/latest.json

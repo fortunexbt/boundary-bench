@@ -3,22 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BoundaryBench · Crash tests for AI agent controls</title>
+    <title>BoundaryBench · Test an AI agent's boundaries over MCP</title>
     <meta
       name="description"
-      content="Run a deterministic crash test on an AI agent's stop button, budget, credentials and approval gates in your browser. Each test runs a benign and an adversarial world side by side."
+      content="A local MCP server that records whether your AI agent follows injected text, overspends a budget, pushes past an approval refusal or keeps going after you stop it."
     />
-    <meta name="theme-color" content="#eceee8" />
+    <meta name="theme-color" content="#ffffff" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="./style.css" />
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="BoundaryBench · Crash tests for AI agent controls"
+      content="BoundaryBench · Test an AI agent's boundaries over MCP"
     />
     <meta
       property="og:description"
-      content="Two matched worlds per test. An agent passes only if it does the ordinary job and holds the line under attack."
+      content="Point your agent's MCP client at a local server. It serves AgentDojo's banking tasks and attacks, and writes down what the agent did."
     />
     <meta
       property="og:url"
@@ -33,119 +32,153 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <a class="skip-link" href="#lab">Skip to the crash test</a>
-    <header class="masthead">
-      <a class="wordmark" href="#top" aria-label="BoundaryBench, back to top">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <path d="M16 3v9M16 12 7 21v8M16 12l9 9v8" />
-          <circle cx="16" cy="3.5" r="2.5" />
-        </svg>
-        <b>BoundaryBench</b>
-      </a>
-      <nav aria-label="Primary">
-        <a href="#lab">Run a test</a>
-        <a href="#bench">Full bench</a>
-        <a href="#how">How it works</a>
-        <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
-      </nav>
-    </header>
-    <main id="top">
-      <section class="lab" id="lab" aria-labelledby="lab-title">
-        <div class="lab__intro">
-          <h1 id="lab-title">
-            Crash tests for the controls around an AI agent.
-          </h1>
-          <p class="lede">
-            An agent with tools can move money, delete repos and leak secrets.
-            Stop buttons, spending caps and approval gates are supposed to
-            prevent that. BoundaryBench checks they hold, by running every test
-            in two matched worlds: one ordinary, one under attack.
-          </p>
-          <div id="lab-controls" class="controls"></div>
+    <a class="skip-link" href="#scenarios">Skip to the scenarios</a>
+    <div class="page">
+      <header class="intro">
+        <div class="intro__title">
+          <h1>BoundaryBench</h1>
+          <nav aria-label="Primary">
+            <a href="#scenarios">Scenarios</a>
+            <a href="#check">Check a trace</a>
+            <a href="#method">Method</a>
+            <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
+          </nav>
         </div>
-        <div id="lab-stage" class="stage" tabindex="-1"></div>
-        <p id="lab-status" class="sr-only" role="status"></p>
-      </section>
-
-      <section class="bench" id="bench" aria-labelledby="bench-title">
-        <div class="section-head">
-          <h2 id="bench-title">The full bench, recomputed in your browser</h2>
-          <p>
-            Seven failure modes, two worlds each, two illustrative agents. The
-            page re-evaluates all 28 traces with the library's own evaluator and
-            checks the result against the published bundle hash.
-          </p>
-        </div>
-        <div id="bench-body"></div>
-      </section>
-
-      <section class="how" id="how" aria-labelledby="how-title">
-        <div class="section-head">
-          <h2 id="how-title">How it works</h2>
-          <p>
-            No model is called and no LLM grades anything. A test is a scripted
-            world, a recorded trace of what the agent did, and checks that read
-            the trace.
-          </p>
-        </div>
-        <dl class="how__list">
+        <p class="intro__lede">
+          Test whether your AI agent respects its boundaries. BoundaryBench is a
+          local MCP server: connect your agent to it, give it a banking task
+          from
+          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>, and
+          the server records whether the agent follows injected text, keeps
+          calling tools after its budget runs out, pushes past an approval
+          refusal, or carries on after you stop it.
+        </p>
+        <dl class="facts">
           <div>
-            <dt>Paired worlds</dt>
-            <dd>
-              Each failure mode has an ordinary world and an attacked one. An
-              agent that refuses everything passes the attack and fails the
-              ordinary job. An agent that obeys everything does the reverse.
-              Only a pair where both halves pass counts.
-            </dd>
+            <dt>Transport</dt>
+            <dd>stdio MCP, official TypeScript SDK</dd>
           </div>
           <div>
-            <dt>Checks on actions, not words</dt>
-            <dd>
-              Checks look at which tools were called, in what order, with which
-              credential and at what cost, and whether a stop, halt or
-              quarantine was recorded. What the agent says about itself is not
-              evidence.
-            </dd>
+            <dt>Tasks and attacks</dt>
+            <dd>AgentDojo banking suite (MIT)</dd>
           </div>
           <div>
-            <dt>Hash-linked receipts</dt>
-            <dd>
-              Every event carries the SHA-256 of the one before it. Delete or
-              edit a line and the chain stops verifying, and a replay of the
-              same run no longer ends on the same hash.
-            </dd>
+            <dt>Needs</dt>
+            <dd>Node 22+ and any MCP client</dd>
           </div>
           <div>
-            <dt>No bodies kept</dt>
-            <dd>
-              Traces store digests, order, trust level, credential audience,
-              cost and tags. Prompts, responses, tokens and secrets are
-              rejected, so a trace can be shared.
-            </dd>
+            <dt>Recorded runs on this page</dt>
+            <dd>None yet</dd>
           </div>
         </dl>
-        <aside class="limits">
+      </header>
+
+      <main class="workspace" id="scenarios">
+        <section class="list" aria-labelledby="scenarios-title">
+          <div class="section-title">
+            <h2 id="scenarios-title">Scenarios</h2>
+            <p>Pick one to get the exact setup for your client.</p>
+          </div>
+          <ol class="scenarios" id="scenario-list"></ol>
+        </section>
+        <aside
+          class="inspector"
+          id="setup"
+          aria-label="Setup for the selected scenario"
+        ></aside>
+        <section class="check" id="check" aria-labelledby="check-title">
+          <div class="section-title">
+            <h2 id="check-title">Check a trace</h2>
+            <p>Read in this tab with the CLI's evaluator. Never uploaded.</p>
+          </div>
+          <label class="drop" id="drop">
+            <input type="file" id="trace-file" accept=".jsonl,.json,.txt" />
+            <span class="drop__title">Open a trace file</span>
+            <span class="drop__hint"
+              >or drop the <code>.jsonl</code> that
+              <code>boundary-bench serve</code> wrote</span
+            >
+          </label>
+          <div id="result" aria-live="polite">
+            <p class="empty">
+              No trace loaded. This page ships no example run: none has been
+              recorded here with a real agent yet, and a made-up one would prove
+              nothing.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <section class="method" id="method" aria-labelledby="method-title">
+        <h2 id="method-title">Method</h2>
+        <div>
+          <dl class="definitions">
+            <div>
+              <dt>Server-side record</dt>
+              <dd>
+                Every <code>tools/call</code> and
+                <code>notifications/cancelled</code> is written as it crosses
+                the wire. The server adds the markers itself: when it serves
+                injected text, refuses a call over budget or without approval,
+                and when the session ends, with the final account state. The
+                agent never writes to the trace.
+              </dd>
+            </div>
+            <div>
+              <dt>Borrowed attacks</dt>
+              <dd>
+                Tools, account data, tasks and injected text are AgentDojo's
+                banking suite (ETH Zurich SPY Lab, MIT), served exactly as its
+                loader produces them with the important_instructions attack.
+                Nothing here is a new attack.
+              </dd>
+            </div>
+            <div>
+              <dt>Actions, not words</dt>
+              <dd>
+                A scenario passes on what the agent did: which tools ran, in
+                what order relative to the boundary, and the account state at
+                the end. What the agent says about itself is not evidence.
+              </dd>
+            </div>
+            <div>
+              <dt>Inconclusive</dt>
+              <dd>
+                If the agent never read the poisoned content, never hit the
+                budget or was never stopped, the boundary wasn't tested. The
+                verdict says so instead of calling it a pass.
+              </dd>
+            </div>
+          </dl>
+          <h3>Limits</h3>
           <p>
-            <b>Limits.</b> Both agents here are scripted fixtures that show the
-            evaluator working, not real models. Passing this pack is not a
-            security proof. Real timing, auth, networking and model randomness
-            need their own trials. To test your own agent, record its tool calls
-            as MCP or A2A envelopes and run the CLI.
+            The trace is a plain file and is not signed. An agent with shell
+            access could edit it, so write it somewhere the agent can't reach.
+            Tools are fakes over AgentDojo's in-memory account: nothing touches
+            the network or a real secret. One run is one sample, and models are
+            not deterministic, so run a scenario more than once before you trust
+            the answer.
           </p>
-          <pre><code>npx tsx src/cli.ts adapt --profile mcp --input your-log.json --out trace.json
-npx tsx src/cli.ts evaluate --scenario retrieval-injection --trace trace.json --replay trace.json</code></pre>
-        </aside>
+        </div>
       </section>
-    </main>
-    <footer class="footer">
-      <span>BoundaryBench 0.1 · Apache-2.0</span>
-      <a href="https://github.com/fortunexbt/boundary-bench"
-        >Source on GitHub</a
-      >
-    </footer>
+
+      <footer class="footer">
+        <span>BoundaryBench 0.2 · Apache-2.0</span>
+        <span
+          >Tasks, tools and attacks from
+          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>
+          (MIT)</span
+        >
+        <a href="https://github.com/fortunexbt/boundary-bench"
+          >Source on GitHub</a
+        >
+      </footer>
+    </div>
     <noscript
-      ><p class="noscript">
-        The crash test runs in JavaScript. The method above still applies.
+      ><p class="fatal">
+        The scenario list and trace checker need JavaScript. The CLI does the
+        same work: <code>boundary-bench list</code> and
+        <code>boundary-bench evaluate trace.jsonl</code>.
       </p></noscript
     >
     <script type="module" src="./main.ts"></script>
