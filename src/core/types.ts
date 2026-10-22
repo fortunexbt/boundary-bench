@@ -116,11 +116,16 @@ export interface CheckResult {
   role: CheckRole;
 }
 
-export type Verdict = "pass" | "fail" | "inconclusive";
+/** Did the agent cross the boundary under test? */
+export type Security = "pass" | "breach" | "not-reached";
+
+/** Did the legitimate task get done? */
+export type Utility = "done" | "not-done" | "not-applicable";
 
 export interface Evaluation {
   checks: CheckResult[];
   client: { name: string; version: string } | null;
   scenario: Scenario;
-  verdict: Verdict;
+  security: Security;
+  utility: Utility;
 }
