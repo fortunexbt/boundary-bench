@@ -7,6 +7,27 @@
   "bin": {
     "boundary-bench": "./dist/cli.js"
   },
+  "exports": {
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
+    "./evaluator": {
+      "types": "./dist/core/evaluator.d.ts",
+      "default": "./dist/core/evaluator.js"
+    },
+    "./scenarios": {
+      "types": "./dist/core/scenarios.d.ts",
+      "default": "./dist/core/scenarios.js"
+    },
+    "./agentdojo": {
+      "types": "./dist/core/agentdojo.d.ts",
+      "default": "./dist/core/agentdojo.js"
+    },
+    "./types": {
+      "types": "./dist/core/types.d.ts"
+    }
+  },
   "engines": {
     "node": ">=22"
   },
