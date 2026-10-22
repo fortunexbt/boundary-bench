@@ -1,4 +1,5 @@
-import { createHash } from "node:crypto";
+import { sha256 as sha256Digest } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 
 import { canonicalJson } from "./canonical.js";
 import type { TraceEvent, TraceEventSeed } from "./types.js";
@@ -6,7 +7,7 @@ import type { TraceEvent, TraceEventSeed } from "./types.js";
 const GENESIS_HASH = "0".repeat(64);
 
 export function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
+  return bytesToHex(sha256Digest(utf8ToBytes(value)));
 }
 
 function eventProjection(

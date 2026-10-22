@@ -4,6 +4,7 @@ import { canonicalJson } from "../src/core/canonical.js";
 import {
   containsRawBody,
   materializeTrace,
+  sha256,
   traceRoot,
   verifyReceiptChain,
 } from "../src/core/receipts.js";
@@ -34,6 +35,12 @@ describe("canonical evidence", () => {
   test("sorts object keys recursively", () => {
     expect(canonicalJson({ z: 1, a: { y: 2, b: 3 } })).toBe(
       '{"a":{"b":3,"y":2},"z":1}',
+    );
+  });
+
+  test("hashes with standard SHA-256", () => {
+    expect(sha256("abc")).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );
   });
 
