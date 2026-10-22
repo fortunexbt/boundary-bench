@@ -1,159 +1,126 @@
-export const SCORE_AXES = [
-  "safety",
-  "utility",
-  "control",
-  "integrity",
-] as const;
+export interface Transaction {
+  amount: number;
+  date: string;
+  id: number;
+  recipient: string;
+  recurring: boolean;
+  sender: string;
+  subject: string;
+}
 
-export type ScoreAxis = (typeof SCORE_AXES)[number];
+export interface BankingState {
+  bank_account: {
+    balance: number;
+    iban: string;
+    scheduled_transactions: Transaction[];
+    transactions: Transaction[];
+  };
+  filesystem: { files: Record<string, string> };
+  user_account: {
+    city: string;
+    first_name: string;
+    last_name: string;
+    password: string;
+    street: string;
+  };
+}
 
-export type TraceActor = "user" | "agent" | "tool" | "control";
+export type RequestId = number | string;
 
-export type TraceKind =
-  | "instruction"
-  | "tool_call"
-  | "tool_result"
-  | "stop"
-  | "final"
-  | "refusal"
-  | "halt"
-  | "quarantine"
-  | "approval_required"
-  | "approval_granted"
-  | "budget_exhausted"
-  | "protocol_error";
+interface EventBase {
+  at: string;
+  seq: number;
+}
 
-export type TrustLevel = "trusted" | "untrusted" | "control";
+export type TraceEvent = EventBase &
+  (
+    | {
+        client: { name: string; version: string } | null;
+        kind: "session_start";
+        protocolVersion: string | null;
+        scenario: string;
+        server: string;
+      }
+    | {
+        args: Record<string, unknown>;
+        kind: "tool_call";
+        request: RequestId;
+        tool: string;
+      }
+    | { kind: "tool_result"; ok: boolean; request: RequestId; tool: string }
+    | {
+        injectionTask: string;
+        kind: "prompt_injection";
+        request: RequestId;
+        tool: string;
+        vector: string;
+      }
+    | { kind: "budget_exhausted"; limit: number; request: RequestId }
+    | { kind: "approval_required"; request: RequestId; tool: string }
+    | { kind: "stop"; reason: string | null; request: RequestId }
+    | { kind: "session_end"; reason: string; state: BankingState }
+  );
 
-export interface TraceEventSeed {
-  actor: TraceActor;
-  audience?: string;
-  costMicros?: number;
+export type TraceKind = TraceEvent["kind"];
+
+export type CheckRole = "precondition" | "utility" | "boundary";
+
+interface CheckBase {
   id: string;
-  kind: TraceKind;
-  meta?: Record<string, boolean | number | string | null>;
-  payloadLabel: string;
-  tags?: string[];
-  tick: number;
-  tool?: string;
-  trust: TrustLevel;
+  label: string;
+  role: CheckRole;
 }
 
-export interface TraceEvent extends Omit<TraceEventSeed, "payloadLabel"> {
-  hash: string;
-  payloadDigest: string;
-  previousHash: string | null;
-  sequence: number;
-  tags: string[];
-}
+export type Check = CheckBase &
+  (
+    | { kind: TraceKind; type: "event" }
+    | { tool: string; type: "called" }
+    | { test: (state: BankingState) => boolean; type: "state" }
+    | { kind: TraceKind; tools?: readonly string[]; type: "no_call_after" }
+  );
 
-interface AssertionBase {
-  axis: ScoreAxis;
-  id: string;
-  rationale: string;
-}
+export type Boundary =
+  "none" | "prompt_injection" | "budget" | "stop" | "approval";
 
-export type ScenarioAssertion =
-  | (AssertionBase & { afterTag?: string; tool: string; type: "forbid_tool" })
-  | (AssertionBase & { tool: string; type: "require_tool" })
-  | (AssertionBase & { maximum: number; type: "max_tool_calls" })
-  | (AssertionBase & { maximum: number; type: "max_cost_micros" })
-  | (AssertionBase & { kind: TraceKind; type: "require_kind" })
-  | (AssertionBase & {
-      kind: TraceKind;
-      type: "require_kind_after_tag";
-      tag: string;
-    })
-  | (AssertionBase & { type: "require_final" })
-  | (AssertionBase & { afterKind: TraceKind; type: "no_tool_after_kind" })
-  | (AssertionBase & { tag: string; type: "no_tool_after_tag" })
-  | (AssertionBase & { expected: string; type: "audience_match" })
-  | (AssertionBase & { type: "receipt_chain" })
-  | (AssertionBase & { type: "body_free" })
-  | (AssertionBase & { type: "replay_match" });
-
-export type ScenarioVariant = "benign" | "adversarial";
-
-export type ScenarioCategory =
-  | "retrieval-integrity"
-  | "tool-output-integrity"
-  | "budget-control"
-  | "stop-control"
-  | "scope-control"
-  | "receipt-integrity"
-  | "approval-control";
-
-export interface ReferenceTrace {
-  primary: TraceEventSeed[];
-  replay?: TraceEventSeed[];
+export interface Injection {
+  goal: string;
+  injectionTask: string;
+  /** The injected field (a file or a transaction subject) exactly as AgentDojo serves it. */
+  served: string;
+  vector: string;
 }
 
 export interface Scenario {
-  assertions: ScenarioAssertion[];
-  category: ScenarioCategory;
-  description: string;
+  approvalRequired?: readonly string[];
+  baseline?: string;
+  boundary: Boundary;
+  budget?: number;
+  checks: Check[];
   id: string;
-  pairId: string;
-  protocol: "native" | "mcp-2025-11-25" | "a2a-1.0";
-  reference: Record<string, ReferenceTrace>;
+  injection?: Injection;
+  /** What the person running the test has to do besides giving the prompt. */
+  operator?: string;
+  prompt: string;
+  summary: string;
   title: string;
-  variant: ScenarioVariant;
+  toolDelayMs?: number;
+  userTask: string;
 }
 
-export interface AssertionResult {
-  axis: ScoreAxis;
-  evidence: string[];
-  explanation: string;
+export interface CheckResult {
+  detail: string;
+  events: number[];
   id: string;
-  passed: boolean;
-}
-
-export interface ScenarioRun {
-  assertions: AssertionResult[];
-  candidateId: string;
-  passed: boolean;
-  replayRoot: string;
-  scenarioId: string;
-  trace: TraceEvent[];
-  traceRoot: string;
-}
-
-export interface AxisScore {
-  axis: ScoreAxis;
-  passed: number;
-  rate: number;
-  total: number;
-}
-
-export interface CandidateScorecard {
-  axes: AxisScore[];
-  candidateId: string;
-  pairedControlsPassed: number;
-  pairedControlsTotal: number;
-  scenariosPassed: number;
-  scenariosTotal: number;
-}
-
-export interface CandidateManifest {
-  description: string;
-  id: string;
-  kind: "illustrative-reference" | "external";
-  name: string;
-}
-
-export interface ProtocolProfile {
   label: string;
-  status: "stable" | "release-candidate";
-  version: string;
+  passed: boolean;
+  role: CheckRole;
 }
 
-export interface ResultBundle {
-  benchmarkVersion: string;
-  bundleHash: string;
-  candidates: CandidateManifest[];
-  protocolProfiles: ProtocolProfile[];
-  runs: ScenarioRun[];
-  schema: "boundary-bench/result-bundle/v1";
-  scenarios: Array<Omit<Scenario, "reference">>;
-  scorecards: CandidateScorecard[];
+export type Verdict = "pass" | "fail" | "inconclusive";
+
+export interface Evaluation {
+  checks: CheckResult[];
+  client: { name: string; version: string } | null;
+  scenario: Scenario;
+  verdict: Verdict;
 }

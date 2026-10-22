@@ -9,5 +9,4 @@ coverage/
 .env.*
 !.env.example
 .playwright-cli/
-output/playwright/desktop-full.png
-output/playwright/mobile-full.png
+.vercel

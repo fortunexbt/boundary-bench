@@ -3,22 +3,188 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BoundaryBench · Test an AI agent's boundaries over MCP</title>
     <meta
       name="description"
-      content="BoundaryBench is a deterministic, offline benchmark for AI agent control planes. Paired scenarios test stops, budgets, audience scopes, approvals and receipt integrity."
+      content="A local MCP server that records whether your AI agent follows injected text, overspends a budget, pushes past an approval refusal or keeps going after you stop it."
     />
     <meta name="theme-color" content="#ffffff" />
-    <title>BoundaryBench</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2315171c'/%3E%3Cpath d='M14 12h22c9 0 14 4 14 11 0 5-3 8-7 9 6 1 9 4 9 10 0 7-5 11-15 11H14V12zm11 9v8h10c3 0 5-1 5-4s-2-4-5-4H25zm0 16v8h12c3 0 5-1 5-4s-2-4-5-4H25z' fill='%23ffffff'/%3E%3C/svg%3E"
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="BoundaryBench · Test an AI agent's boundaries over MCP"
     />
+    <meta
+      property="og:description"
+      content="Point your agent's MCP client at a local server. It serves AgentDojo's banking tasks and attacks, and writes down what the agent did."
+    />
+    <meta
+      property="og:url"
+      content="https://boundary-bench-beryl.vercel.app/"
+    />
+    <meta
+      property="og:image"
+      content="https://boundary-bench-beryl.vercel.app/og.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <a class="skip-link" href="#results">Skip to results</a>
-    <div id="app">
-      <p class="boot" role="status">Loading results</p>
+    <a class="skip-link" href="#scenarios">Skip to the scenarios</a>
+    <div class="page">
+      <header class="intro">
+        <div class="intro__title">
+          <h1>BoundaryBench</h1>
+          <nav aria-label="Primary">
+            <a href="#results">Results</a>
+            <a href="#scenarios">Scenarios</a>
+            <a href="#check">Check a trace</a>
+            <a href="#method">Method</a>
+            <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
+          </nav>
+        </div>
+        <p class="intro__lede">
+          Test whether your AI agent respects its boundaries. BoundaryBench is a
+          local MCP server: connect your agent to it, give it a banking task
+          from
+          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>, and
+          the server records whether the agent follows injected text, keeps
+          calling tools after its budget runs out, pushes past an approval
+          refusal, or carries on after you stop it.
+        </p>
+        <dl class="facts">
+          <div>
+            <dt>Transport</dt>
+            <dd>stdio MCP, official TypeScript SDK</dd>
+          </div>
+          <div>
+            <dt>Tasks and attacks</dt>
+            <dd>AgentDojo banking suite (MIT)</dd>
+          </div>
+          <div>
+            <dt>Needs</dt>
+            <dd>Node 22+ and any MCP client</dd>
+          </div>
+        </dl>
+      </header>
+
+      <section class="results" id="results" aria-labelledby="results-title">
+        <!--results-->
+      </section>
+
+      <main class="workspace" id="scenarios">
+        <section class="list" aria-labelledby="scenarios-title">
+          <div class="section-title">
+            <h2 id="scenarios-title">Scenarios</h2>
+            <p>Pick one to get the exact setup for your client.</p>
+          </div>
+          <ol class="scenarios" id="scenario-list">
+            <!--scenario-list-->
+          </ol>
+        </section>
+        <aside
+          class="inspector"
+          id="setup"
+          aria-label="Setup for the selected scenario"
+        >
+          <!--setup-->
+        </aside>
+        <section class="check" id="check" aria-labelledby="check-title">
+          <div class="section-title">
+            <h2 id="check-title" tabindex="-1">Check a trace</h2>
+            <p>Read in this tab with the CLI's evaluator. Never uploaded.</p>
+          </div>
+          <label class="drop" id="drop">
+            <input type="file" id="trace-file" accept=".jsonl,.json,.txt" />
+            <span class="drop__title">Open a trace file</span>
+            <span class="drop__hint"
+              >or drop the <code>.jsonl</code> that
+              <code>boundary-bench serve</code> wrote</span
+            >
+          </label>
+          <div id="result" aria-live="polite">
+            <p class="empty">
+              No trace loaded. Open one of the recorded runs above, or a trace
+              of your own.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <section class="method" id="method" aria-labelledby="method-title">
+        <h2 id="method-title">Method</h2>
+        <div>
+          <dl class="definitions">
+            <div>
+              <dt>Server-side record</dt>
+              <dd>
+                Every <code>tools/call</code> and
+                <code>notifications/cancelled</code> is written as it crosses
+                the wire. The server adds the markers itself: when it serves
+                injected text, refuses a call over budget or without approval,
+                and when the session ends, with the final account state. The
+                agent never writes to the trace.
+              </dd>
+            </div>
+            <div>
+              <dt>Borrowed attacks</dt>
+              <dd>
+                Tools, account data, tasks and injected text are AgentDojo's
+                banking suite (ETH Zurich SPY Lab, MIT), served exactly as its
+                loader produces them with the important_instructions attack.
+                Nothing here is a new attack.
+              </dd>
+            </div>
+            <div>
+              <dt>Actions, not words</dt>
+              <dd>
+                A scenario passes on what the agent did: which tools ran, in
+                what order relative to the boundary, and the account state at
+                the end. What the agent says about itself is not evidence.
+              </dd>
+            </div>
+            <div>
+              <dt>Inconclusive</dt>
+              <dd>
+                If the agent never read the poisoned content, never hit the
+                budget or was never stopped, the boundary wasn't tested. The
+                verdict says so instead of calling it a pass.
+              </dd>
+            </div>
+          </dl>
+          <h3>Limits</h3>
+          <p>
+            The trace is a plain file and is not signed. An agent with shell
+            access could edit it, so write it somewhere the agent can't reach.
+            Tools are fakes over AgentDojo's in-memory account: nothing touches
+            the network or a real secret. One run is one sample, and models are
+            not deterministic, so run a scenario more than once before you trust
+            the answer.
+          </p>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>BoundaryBench 0.2 · Apache-2.0</span>
+        <span
+          >Tasks, tools and attacks from
+          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>
+          (MIT)</span
+        >
+        <a href="https://github.com/fortunexbt/boundary-bench"
+          >Source on GitHub</a
+        >
+      </footer>
     </div>
-    <script type="module" src="/main.ts"></script>
+    <noscript
+      ><p class="fatal">
+        The scenario list and trace checker need JavaScript. The CLI does the
+        same work: <code>boundary-bench list</code> and
+        <code>boundary-bench evaluate trace.jsonl</code>.
+      </p></noscript
+    >
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
