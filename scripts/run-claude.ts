@@ -25,7 +25,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -196,7 +196,8 @@ async function runOnce(): Promise<void> {
     const message = JSON.parse(line) as StreamMessage;
     // Account quota telemetry, nothing to do with the run.
     if (message.type === "rate_limit_event") continue;
-    transcript.write(`${line}\n`);
+    // Transcripts are committed publicly; don't leak the operator's home path or plugin list.
+    transcript.write(`${line.split(homedir()).join("~")}\n`);
     if (message.type === "system" && message.subtype === "init") {
       record.model = message.model;
       record.claudeCodeVersion = message.claude_code_version;
