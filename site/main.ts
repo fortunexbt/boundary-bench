@@ -1,6 +1,5 @@
 import "@fontsource-variable/atkinson-hyperlegible-next";
 import "@fontsource-variable/atkinson-hyperlegible-mono";
-import "./style.css";
 
 import {
   buildResultBundle,

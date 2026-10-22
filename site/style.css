@@ -558,10 +558,6 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-.row__hash {
-  opacity: 0.8;
-}
-
 .row__text code {
   padding: 0 0.25em;
   border-radius: 3px;
@@ -597,12 +593,12 @@ h1 {
 }
 
 .row.is-breach .row__text {
-  color: var(--fail);
+  color: #962514;
   font-weight: 700;
 }
 
 .row.is-breach .row__text code {
-  background: rgb(180 47 27 / 0.12);
+  background: rgb(180 47 27 / 0.08);
 }
 
 .row.is-deleted {
