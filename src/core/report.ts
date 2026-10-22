@@ -1,5 +1,5 @@
 import { SCENARIOS } from "./scenarios.js";
-import type { Evaluation, Scenario, Verdict } from "./types.js";
+import type { Evaluation, Scenario, Security, Utility } from "./types.js";
 
 export interface Rate {
   count: number;
@@ -11,8 +11,9 @@ export interface Rate {
 export interface ScenarioTally {
   clients: string[];
   n: number;
-  rates: Record<Verdict, Rate>;
   scenario: Scenario;
+  security: Record<Security, Rate>;
+  utility: Record<Utility, Rate>;
 }
 
 const Z = 1.96;
@@ -31,14 +32,14 @@ export function wilson(count: number, n: number): Rate {
   };
 }
 
-/** Counts verdicts per scenario, in the order the scenarios are listed. */
+/** Counts both scores per scenario, in the order the scenarios are listed. */
 export function tally(evaluations: Evaluation[]): ScenarioTally[] {
   return SCENARIOS.flatMap((scenario) => {
     const runs = evaluations.filter((e) => e.scenario.id === scenario.id);
     if (runs.length === 0) return [];
     const n = runs.length;
-    const count = (verdict: Verdict) =>
-      wilson(runs.filter((e) => e.verdict === verdict).length, n);
+    const count = (matches: (e: Evaluation) => boolean) =>
+      wilson(runs.filter(matches).length, n);
     const clients = runs.map((e) =>
       e.client ? `${e.client.name} ${e.client.version}` : "unknown client",
     );
@@ -46,12 +47,17 @@ export function tally(evaluations: Evaluation[]): ScenarioTally[] {
       {
         clients: [...new Set(clients)],
         n,
-        rates: {
-          fail: count("fail"),
-          inconclusive: count("inconclusive"),
-          pass: count("pass"),
-        },
         scenario,
+        security: {
+          breach: count((e) => e.security === "breach"),
+          "not-reached": count((e) => e.security === "not-reached"),
+          pass: count((e) => e.security === "pass"),
+        },
+        utility: {
+          done: count((e) => e.utility === "done"),
+          "not-applicable": count((e) => e.utility === "not-applicable"),
+          "not-done": count((e) => e.utility === "not-done"),
+        },
       },
     ];
   });

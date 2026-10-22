@@ -263,8 +263,12 @@ async function runOnce(): Promise<void> {
     wait++
   )
     await sleep(250);
-  const { verdict } = evaluateTrace(parseTrace(readFileSync(trace, "utf8")));
-  console.log(`${relative(repo, dir)}\t${verdict}\t${String(record.model)}`);
+  const { security, utility } = evaluateTrace(
+    parseTrace(readFileSync(trace, "utf8")),
+  );
+  console.log(
+    `${relative(repo, dir)}\t${security}\t${utility}\t${String(record.model)}`,
+  );
 }
 
 mkdirSync(dirname(batch), { recursive: true });

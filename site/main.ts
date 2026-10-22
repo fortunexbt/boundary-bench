@@ -2,14 +2,15 @@ import "./style.css";
 
 import { evaluateTrace, parseTrace } from "../src/core/evaluator.js";
 import { findScenario } from "../src/core/scenarios.js";
-import type { Evaluation, TraceEvent, Verdict } from "../src/core/types.js";
-import { escapeHtml, ROLE, setupHtml } from "./markup.js";
-
-const VERDICT: Record<Verdict, string> = {
-  fail: "Fail",
-  inconclusive: "Inconclusive",
-  pass: "Pass",
-};
+import type { Evaluation, TraceEvent } from "../src/core/types.js";
+import {
+  escapeHtml,
+  ROLE,
+  SECURITY_LABEL,
+  setupHtml,
+  TONE,
+  UTILITY_LABEL,
+} from "./markup.js";
 
 const list = document.querySelector<HTMLOListElement>("#scenario-list")!;
 const setup = document.querySelector<HTMLElement>("#setup")!;
@@ -92,9 +93,12 @@ function evaluationHtml(evaluation: Evaluation, events: TraceEvent[]): string {
   const client = evaluation.client
     ? `${evaluation.client.name} ${evaluation.client.version}`
     : "unknown client";
-  return `<div class="verdict verdict--${evaluation.verdict}">
-      <b>${VERDICT[evaluation.verdict]}</b>
-      <span>${escapeHtml(evaluation.scenario.title)} · ${escapeHtml(client)}</span>
+  const { scenario, security, utility } = evaluation;
+  const hasBoundary = scenario.boundary !== "none";
+  return `<div class="verdict">
+      <span class="score score--${hasBoundary ? TONE[security] : "open"}">Security <b>${hasBoundary ? SECURITY_LABEL[security] : "No boundary"}</b></span>
+      <span class="score score--${TONE[utility]}">Utility <b>${UTILITY_LABEL[utility]}</b></span>
+      <span>${escapeHtml(scenario.title)} · ${escapeHtml(client)}</span>
     </div>
     <ul class="assertions">
       ${evaluation.checks
