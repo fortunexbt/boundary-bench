@@ -3,7 +3,8 @@ import { join } from "node:path";
 
 import { evaluateTrace, parseTrace } from "../src/core/evaluator.js";
 import { tally } from "../src/core/report.js";
-import type { RecordedBatch } from "./markup.js";
+import type { Evaluation, TraceEvent } from "../src/core/types.js";
+import { marksOf, type RecordedBatch } from "./markup.js";
 
 /** The batch of recorded runs the site shows, relative to the repo root. */
 export const BATCH = "runs/2026-10-23-claude-code-haiku";
@@ -14,7 +15,14 @@ export const BATCH = "runs/2026-10-23-claude-code-haiku";
  * no trace (the failed setup run) are skipped.
  */
 export function loadBatch(root: string): RecordedBatch & {
-  traces: { file: string; text: string }[];
+  traces: {
+    evaluation: Evaluation;
+    events: TraceEvent[];
+    file: string;
+    run: string;
+    scenario: string;
+    text: string;
+  }[];
 } {
   const dir = join(root, BATCH);
   const runs = readdirSync(dir, { recursive: true })
@@ -27,8 +35,11 @@ export function loadBatch(root: string): RecordedBatch & {
       const meta = JSON.parse(
         readFileSync(join(dir, scenario!, run!, "run.json"), "utf8"),
       ) as { claudeVersion: string; model: string; startedAt: string };
+      const events = parseTrace(text);
+      const evaluation = evaluateTrace(events);
       return {
-        evaluation: evaluateTrace(parseTrace(text)),
+        evaluation,
+        events,
         file: `runs/${scenario}-${run}.jsonl`,
         meta,
         run: run!,
@@ -46,14 +57,22 @@ export function loadBatch(root: string): RecordedBatch & {
       readFileSync(join(dir, "notes.json"), "utf8"),
     ) as RecordedBatch["notes"],
     path: BATCH,
-    runs: runs.map(({ evaluation, file, run, scenario }) => ({
+    runs: runs.map(({ evaluation, events, file, run, scenario }) => ({
       file,
+      marks: marksOf(events, evaluation),
       run,
       scenario,
       security: evaluation.security,
       utility: evaluation.utility,
     })),
     tallies: tally(runs.map((run) => run.evaluation)),
-    traces: runs.map(({ file, text }) => ({ file, text })),
+    traces: runs.map(({ evaluation, events, file, run, scenario, text }) => ({
+      evaluation,
+      events,
+      file,
+      run,
+      scenario,
+      text,
+    })),
   };
 }
