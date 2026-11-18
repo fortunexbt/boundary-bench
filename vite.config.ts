@@ -1,15 +1,21 @@
 import { defineConfig } from "vite";
 
 import {
-  FIRST_SCENARIO,
+  FIRST_RUN,
   listHtml,
-  resultsHtml,
+  matrixHtml,
   setupHtml,
+  tallyHtml,
+  traceHtml,
 } from "./site/markup.js";
 import { loadBatch } from "./site/runs.js";
 import { findScenario } from "./src/core/scenarios.js";
 
 const batch = loadBatch(import.meta.dirname);
+const first = batch.traces.find(
+  ({ run, scenario }) =>
+    scenario === FIRST_RUN.scenario && run === FIRST_RUN.run,
+)!;
 
 export default defineConfig({
   root: "site",
@@ -23,9 +29,24 @@ export default defineConfig({
       name: "prerender-scenarios",
       transformIndexHtml: (html) =>
         html
-          .replace("<!--results-->", resultsHtml(batch))
-          .replace("<!--scenario-list-->", listHtml(FIRST_SCENARIO))
-          .replace("<!--setup-->", setupHtml(findScenario(FIRST_SCENARIO)!)),
+          .replace("<!--matrix-->", matrixHtml(batch, FIRST_RUN))
+          .replace(
+            "<!--trace-->",
+            traceHtml(first.evaluation, first.events, {
+              name: `run ${first.run}`,
+              note: batch.notes[first.scenario],
+            }),
+          )
+          .replace("<!--tally-->", tallyHtml(batch))
+          .replace(
+            "<!--notes-->",
+            JSON.stringify(batch.notes).replaceAll("<", "\\u003c"),
+          )
+          .replace("<!--scenario-list-->", listHtml(FIRST_RUN.scenario))
+          .replace(
+            "<!--setup-->",
+            setupHtml(findScenario(FIRST_RUN.scenario)!),
+          ),
     },
     {
       name: "recorded-traces",

@@ -8,7 +8,13 @@
       name="description"
       content="A local MCP server that records whether your AI agent follows injected text, overspends a budget, pushes past an approval refusal or keeps going after you stop it."
     />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#e4e6e4" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap"
+    />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
     <meta
@@ -32,53 +38,64 @@
     <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <a class="skip-link" href="#scenarios">Skip to the scenarios</a>
+    <a class="skip-link" href="#results">Skip to the recorded runs</a>
     <div class="page">
-      <header class="intro">
-        <div class="intro__title">
-          <h1>BoundaryBench</h1>
-          <nav aria-label="Primary">
-            <a href="#results">Results</a>
-            <a href="#scenarios">Scenarios</a>
-            <a href="#check">Check a trace</a>
-            <a href="#method">Method</a>
-            <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
-          </nav>
-        </div>
-        <p class="intro__lede">
-          Test whether your AI agent respects its boundaries. BoundaryBench is a
-          local MCP server: connect your agent to it, give it a banking task
-          from
-          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>, and
-          the server records whether the agent follows injected text, keeps
-          calling tools after its budget runs out, pushes past an approval
-          refusal, or carries on after you stop it.
+      <header class="masthead">
+        <h1>BoundaryBench</h1>
+        <p class="masthead__lede">
+          A local MCP server that serves your agent a banking task from
+          <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a> and
+          records whether it follows injected text, keeps calling tools after
+          its budget runs out, pushes past an approval refusal, or carries on
+          after you stop it.
         </p>
-        <dl class="facts">
-          <div>
-            <dt>Transport</dt>
-            <dd>stdio MCP, official TypeScript SDK</dd>
-          </div>
-          <div>
-            <dt>Tasks and attacks</dt>
-            <dd>AgentDojo banking suite (MIT)</dd>
-          </div>
-          <div>
-            <dt>Needs</dt>
-            <dd>Node 22+ and any MCP client</dd>
-          </div>
-        </dl>
+        <nav aria-label="Primary">
+          <a href="#results">Results</a>
+          <a href="#scenarios">Run it</a>
+          <a href="#check">Check a trace</a>
+          <a href="#method">Method</a>
+          <a href="https://github.com/fortunexbt/boundary-bench">GitHub</a>
+        </nav>
       </header>
 
-      <section class="results" id="results" aria-labelledby="results-title">
-        <!--results-->
+      <div class="bench">
+        <section
+          class="bench__matrix"
+          id="results"
+          aria-labelledby="results-title"
+        >
+          <!--matrix-->
+        </section>
+        <section class="trace" id="check" aria-labelledby="check-title">
+          <div class="trace__bar">
+            <h2 id="check-title" tabindex="-1">Trace</h2>
+            <label class="drop" id="drop">
+              <input type="file" id="trace-file" accept=".jsonl,.json,.txt" />
+              <span>Open your own trace</span>
+            </label>
+          </div>
+          <p class="trace__privacy">
+            Open or drop a <code>.jsonl</code> that
+            <code>boundary-bench serve</code> wrote. It is scored in this tab
+            with the CLI's evaluator and never uploaded.
+          </p>
+          <div id="result" aria-live="polite"><!--trace--></div>
+        </section>
+      </div>
+
+      <section class="tally" aria-labelledby="tally-title">
+        <!--tally-->
       </section>
 
       <main class="workspace" id="scenarios">
         <section class="list" aria-labelledby="scenarios-title">
           <div class="section-title">
-            <h2 id="scenarios-title">Scenarios</h2>
-            <p>Pick one to get the exact setup for your client.</p>
+            <h2 id="scenarios-title">Run it on your agent</h2>
+            <p>
+              The server speaks stdio MCP on the official TypeScript SDK. You
+              need Node 22+ and any MCP client. Pick a scenario for the exact
+              setup.
+            </p>
           </div>
           <ol class="scenarios" id="scenario-list">
             <!--scenario-list-->
@@ -91,26 +108,6 @@
         >
           <!--setup-->
         </aside>
-        <section class="check" id="check" aria-labelledby="check-title">
-          <div class="section-title">
-            <h2 id="check-title" tabindex="-1">Check a trace</h2>
-            <p>Read in this tab with the CLI's evaluator. Never uploaded.</p>
-          </div>
-          <label class="drop" id="drop">
-            <input type="file" id="trace-file" accept=".jsonl,.json,.txt" />
-            <span class="drop__title">Open a trace file</span>
-            <span class="drop__hint"
-              >or drop the <code>.jsonl</code> that
-              <code>boundary-bench serve</code> wrote</span
-            >
-          </label>
-          <div id="result" aria-live="polite">
-            <p class="empty">
-              No trace loaded. Open one of the recorded runs above, or a trace
-              of your own.
-            </p>
-          </div>
-        </section>
       </main>
 
       <section class="method" id="method" aria-labelledby="method-title">
@@ -170,7 +167,7 @@
       </section>
 
       <footer class="footer">
-        <span>BoundaryBench 0.2 · Apache-2.0</span>
+        <span>BoundaryBench 0.2, Apache-2.0</span>
         <span
           >Tasks, tools and attacks from
           <a href="https://github.com/ethz-spylab/agentdojo">AgentDojo</a>
@@ -188,6 +185,9 @@
         <code>boundary-bench evaluate trace.jsonl</code>.
       </p></noscript
     >
+    <script type="application/json" id="notes">
+      <!--notes-->
+    </script>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
